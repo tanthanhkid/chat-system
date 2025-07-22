@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="7" failures="0" skipped="0" tests="7" time="10.231" timestamp="2025-07-22T09:03:25.812123" hostname="thanhs-Mac-mini.local"><testcase classname="tests.selenium.test_chat_widget.TestChatWidget" name="test_widget_button_visibility" time="6.351"><error message="failed on setup with &quot;OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'&quot;">tests/conftest.py:53: in chrome_driver
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chromium/webdriver.py:53: in __init__
+    self.service.start()
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:98: in start
+    self._start_process(self._path)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:204: in _start_process
+    self.process = subprocess.Popen(
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:951: in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:1821: in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+E   OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'</error></testcase><testcase classname="tests.selenium.test_chat_widget.TestChatWidget" name="test_widget_toggle_functionality" time="0.528"><error message="failed on setup with &quot;OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'&quot;">tests/conftest.py:53: in chrome_driver
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chromium/webdriver.py:53: in __init__
+    self.service.start()
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:98: in start
+    self._start_process(self._path)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:204: in _start_process
+    self.process = subprocess.Popen(
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:951: in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:1821: in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+E   OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'</error></testcase><testcase classname="tests.selenium.test_chat_widget.TestChatWidget" name="test_connection_status_display" time="0.581"><error message="failed on setup with &quot;OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'&quot;">tests/conftest.py:53: in chrome_driver
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chromium/webdriver.py:53: in __init__
+    self.service.start()
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:98: in start
+    self._start_process(self._path)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:204: in _start_process
+    self.process = subprocess.Popen(
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:951: in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:1821: in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+E   OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'</error></testcase><testcase classname="tests.selenium.test_chat_widget.TestChatWidget" name="test_message_input_functionality" time="0.773"><error message="failed on setup with &quot;OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'&quot;">tests/conftest.py:53: in chrome_driver
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chromium/webdriver.py:53: in __init__
+    self.service.start()
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:98: in start
+    self._start_process(self._path)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:204: in _start_process
+    self.process = subprocess.Popen(
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:951: in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:1821: in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+E   OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'</error></testcase><testcase classname="tests.selenium.test_chat_widget.TestChatWidget" name="test_user_switching_functionality" time="0.571"><error message="failed on setup with &quot;OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'&quot;">tests/conftest.py:53: in chrome_driver
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chromium/webdriver.py:53: in __init__
+    self.service.start()
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:98: in start
+    self._start_process(self._path)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:204: in _start_process
+    self.process = subprocess.Popen(
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:951: in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:1821: in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+E   OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'</error></testcase><testcase classname="tests.selenium.test_chat_widget.TestChatWidget" name="test_widget_responsive_behavior" time="0.501"><error message="failed on setup with &quot;OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'&quot;">tests/conftest.py:53: in chrome_driver
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chromium/webdriver.py:53: in __init__
+    self.service.start()
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:98: in start
+    self._start_process(self._path)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:204: in _start_process
+    self.process = subprocess.Popen(
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:951: in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:1821: in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+E   OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'</error></testcase><testcase classname="tests.selenium.test_chat_widget.TestChatWidget" name="test_widget_position_variants" time="0.575"><error message="failed on setup with &quot;OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'&quot;">tests/conftest.py:53: in chrome_driver
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chrome/webdriver.py:45: in __init__
+    super().__init__(
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/chromium/webdriver.py:53: in __init__
+    self.service.start()
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:98: in start
+    self._start_process(self._path)
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/common/service.py:204: in _start_process
+    self.process = subprocess.Popen(
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:951: in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py:1821: in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+E   OSError: [Errno 8] Exec format error: '/Users/thanhtran/.wdm/drivers/chromedriver/mac64/138.0.7204.157/chromedriver-mac-arm64/THIRD_PARTY_NOTICES.chromedriver'</error></testcase></testsuite></testsuites>

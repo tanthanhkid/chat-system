@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Push Notifications Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+            transition: background 0.2s;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            font-weight: 500;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔔 Push Notifications Test</h1>
+        <p>Test the push notification functionality for the Chat Admin Dashboard</p>
+        
+        <div id="status" class="status info">
+            Checking notification support...
+        </div>
+        
+        <button id="requestPermission" class="btn" disabled>Request Permission</button>
+        <button id="subscribe" class="btn" disabled>Subscribe to Push</button>
+        <button id="testNotification" class="btn" disabled>Test Local Notification</button>
+        <button id="testPushNotification" class="btn" disabled>Test Push Notification</button>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const logEl = document.getElementById('log');
+        const requestPermissionBtn = document.getElementById('requestPermission');
+        const subscribeBtn = document.getElementById('subscribe');
+        const testNotificationBtn = document.getElementById('testNotification');
+        const testPushNotificationBtn = document.getElementById('testPushNotification');
+        
+        let serviceWorkerRegistration = null;
+        let pushSubscription = null;
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${timestamp}] ${message}<br>`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+        
+        function updateButtonStates() {
+            const permission = Notification.permission;
+            const hasServiceWorker = !!serviceWorkerRegistration;
+            const hasSubscription = !!pushSubscription;
+            
+            requestPermissionBtn.disabled = permission === 'granted';
+            subscribeBtn.disabled = !hasServiceWorker || permission !== 'granted' || hasSubscription;
+            testNotificationBtn.disabled = permission !== 'granted';
+            testPushNotificationBtn.disabled = !hasSubscription;
+        }
+        
+        async function checkSupport() {
+            if (!('serviceWorker' in navigator)) {
+                updateStatus('Service Workers not supported', 'error');
+                log('❌ Service Workers not supported');
+                return false;
+            }
+            
+            if (!('Notification' in window)) {
+                updateStatus('Notifications not supported', 'error');
+                log('❌ Notifications not supported');
+                return false;
+            }
+            
+            if (!('PushManager' in window)) {
+                updateStatus('Push notifications not supported', 'error');
+                log('❌ Push notifications not supported');
+                return false;
+            }
+            
+            updateStatus('All features supported!', 'success');
+            log('✅ All notification features supported');
+            return true;
+        }
+        
+        async function registerServiceWorker() {
+            try {
+                serviceWorkerRegistration = await navigator.serviceWorker.register('/sw.js');
+                log('✅ Service Worker registered successfully');
+                updateButtonStates();
+                
+                // Listen for messages from service worker
+                navigator.serviceWorker.addEventListener('message', event => {
+                    log(`📨 Message from SW: ${JSON.stringify(event.data)}`);
+                });
+                
+            } catch (error) {
+                log(`❌ Service Worker registration failed: ${error.message}`);
+                updateStatus('Service Worker registration failed', 'error');
+            }
+        }
+        
+        async function requestNotificationPermission() {
+            try {
+                const permission = await Notification.requestPermission();
+                log(`📋 Notification permission: ${permission}`);
+                
+                if (permission === 'granted') {
+                    updateStatus('Notifications enabled!', 'success');
+                } else {
+                    updateStatus('Notifications denied', 'error');
+                }
+                
+                updateButtonStates();
+            } catch (error) {
+                log(`❌ Permission request failed: ${error.message}`);
+                updateStatus('Permission request failed', 'error');
+            }
+        }
+        
+        async function subscribeToPush() {
+            try {
+                if (!serviceWorkerRegistration) {
+                    log('❌ No service worker registration');
+                    return;
+                }
+                
+                const vapidPublicKey = 'BPXhtDtL-3ghTIDfR6MQqMU--tftleMn_HBiUphfvZmY81iXOlfrL0Xo_WIqWKzhCm3FixnYFzgVigcaMcZt2vI';
+                
+                pushSubscription = await serviceWorkerRegistration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlB64ToUint8Array(vapidPublicKey)
+                });
+                
+                log('✅ Push subscription created');
+                log(`📱 Endpoint: ${pushSubscription.endpoint.substring(0, 50)}...`);
+                
+                // Send subscription to server
+                const response = await fetch('http://localhost:3001/api/admin/push/subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        endpoint: pushSubscription.endpoint,
+                        keys: {
+                            p256dh: arrayBufferToBase64(pushSubscription.getKey('p256dh')),
+                            auth: arrayBufferToBase64(pushSubscription.getKey('auth'))
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    log('✅ Subscription sent to server');
+                    updateStatus('Push notifications ready!', 'success');
+                } else {
+                    log(`❌ Failed to send subscription to server: ${response.status}`);
+                    updateStatus('Failed to register with server', 'error');
+                }
+                
+                updateButtonStates();
+                
+            } catch (error) {
+                log(`❌ Push subscription failed: ${error.message}`);
+                updateStatus('Push subscription failed', 'error');
+            }
+        }
+        
+        function testLocalNotification() {
+            if (Notification.permission !== 'granted') {
+                log('❌ Notification permission not granted');
+                return;
+            }
+            
+            const notification = new Notification('Test Notification', {
+                body: 'This is a test notification from the Chat Admin Dashboard',
+                icon: '/favicon.ico',
+                badge: '/favicon.ico',
+                data: { test: true },
+                requireInteraction: true
+            });
+            
+            notification.onclick = () => {
+                log('🖱️ Notification clicked');
+                notification.close();
+            };
+            
+            log('📱 Local notification sent');
+        }
+        
+        async function testPushNotification() {
+            try {
+                // Simulate a push notification by calling the server
+                const response = await fetch('http://localhost:3001/api/admin/test-push', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        title: 'Test Push Notification',
+                        body: 'This is a test push notification from the server',
+                        data: { test: true }
+                    })
+                });
+                
+                if (response.ok) {
+                    log('✅ Push notification test request sent');
+                } else {
+                    log(`❌ Push notification test failed: ${response.status}`);
+                }
+                
+            } catch (error) {
+                log(`❌ Push notification test error: ${error.message}`);
+            }
+        }
+        
+        function urlB64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+            
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+        
+        function arrayBufferToBase64(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+        
+        // Event listeners
+        requestPermissionBtn.addEventListener('click', requestNotificationPermission);
+        subscribeBtn.addEventListener('click', subscribeToPush);
+        testNotificationBtn.addEventListener('click', testLocalNotification);
+        testPushNotificationBtn.addEventListener('click', testPushNotification);
+        
+        // Initialize
+        async function init() {
+            const supported = await checkSupport();
+            if (supported) {
+                await registerServiceWorker();
+                updateButtonStates();
+                
+                // Check current permission state
+                log(`📋 Current permission: ${Notification.permission}`);
+                if (Notification.permission === 'granted') {
+                    updateStatus('Ready to test notifications', 'success');
+                } else {
+                    updateStatus('Click "Request Permission" to enable notifications', 'info');
+                }
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# This is a placeholder for the notification sound file
+# In production, you would add an actual MP3 file here
+# You can download notification sounds from:
+# - https://freesound.org/
+# - https://mixkit.co/free-sound-effects/notification/
+# 
+# Popular notification sound options:
+# - Subtle "ding" sound for new messages
+# - Messenger-style notification tone
+# - Custom branded notification sound
+#
+# File should be optimized for web (small file size, good quality)

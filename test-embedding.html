@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Widget Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .content {
+            line-height: 1.6;
+            color: #666;
+        }
+        .demo-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .email-inputs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .email-inputs button {
+            padding: 10px 20px;
+            border: 1px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .email-inputs button:hover {
+            background: #007bff;
+            color: white;
+        }
+        .email-inputs button.active {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chat Widget Demo</h1>
+        <div class="content">
+            <p>This is a demo page showing how the chat widget can be embedded into any website.</p>
+            
+            <div class="demo-section">
+                <h3>Test Different Users</h3>
+                <p>Click on the buttons below to test the chat widget with different email addresses:</p>
+                <div class="email-inputs">
+                    <button onclick="switchUser('user1@example.com')">User 1</button>
+                    <button onclick="switchUser('user2@example.com')">User 2</button>
+                    <button onclick="switchUser('admin@example.com')">Admin User</button>
+                    <button onclick="switchUser('test@company.com')">Test Company</button>
+                </div>
+                <p><strong>Current User:</strong> <span id="current-user">user1@example.com</span></p>
+            </div>
+
+            <div class="demo-section">
+                <h3>Instructions:</h3>
+                <ol>
+                    <li>Start the database: <code>docker-compose up -d</code></li>
+                    <li>Start the server: <code>npm run dev:server</code></li>
+                    <li>Start the admin interface: <code>npm run dev:admin</code></li>
+                    <li>Open this page and click the chat bubble in the bottom-right corner</li>
+                    <li>Open the admin interface at <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+                    <li>Send messages between users and admin to test the system</li>
+                </ol>
+            </div>
+
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</p>
+            
+            <p>Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+        </div>
+    </div>
+
+    <!-- Chat Widget Container -->
+    <div id="chat-widget-container"></div>
+
+    <!-- React and ReactDOM from CDN for demo -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/socket.io-client@4/dist/socket.io.js"></script>
+
+    <!-- Demo Widget Implementation -->
+    <script>
+        // Simple demo implementation - in production you'd use the built library
+        let currentEmail = 'user1@example.com';
+        let widgetRoot = null;
+
+        // Mock ChatWidget component for demo
+        function ChatWidget({ email }) {
+            const [isOpen, setIsOpen] = React.useState(false);
+            const [messages, setMessages] = React.useState([]);
+            const [newMessage, setNewMessage] = React.useState('');
+            const [socket, setSocket] = React.useState(null);
+            const [conversationId, setConversationId] = React.useState(null);
+
+            React.useEffect(() => {
+                const newSocket = io('http://localhost:3001');
+                setSocket(newSocket);
+
+                newSocket.on('connect', () => {
+                    console.log('Socket connected, emitting join-user for:', email);
+                    newSocket.emit('join-user', { email });
+                });
+
+                newSocket.on('conversation-joined', (data) => {
+                    console.log('Received conversation-joined:', data);
+                    setConversationId(data.conversationId);
+                    setMessages(data.messages);
+                });
+
+                newSocket.on('new-message', (message) => {
+                    setMessages(prev => [...prev, message]);
+                });
+
+                return () => newSocket.disconnect();
+            }, [email]);
+
+            const sendMessage = () => {
+                if (!newMessage.trim() || !socket || !conversationId) return;
+                socket.emit('user-message', {
+                    conversationId,
+                    content: newMessage.trim(),
+                    email
+                });
+                setNewMessage('');
+            };
+
+            return React.createElement('div', {
+                style: {
+                    position: 'fixed',
+                    bottom: '20px',
+                    right: '20px',
+                    zIndex: 9999,
+                    fontFamily: 'Arial, sans-serif'
+                }
+            }, [
+                React.createElement('button', {
+                    key: 'toggle',
+                    'data-testid': 'chat-toggle-button',
+                    onClick: () => setIsOpen(!isOpen),
+                    style: {
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '50%',
+                        border: 'none',
+                        backgroundColor: '#007bff',
+                        color: 'white',
+                        fontSize: '24px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                    }
+                }, isOpen ? '✕' : '💬'),
+                
+                isOpen && React.createElement('div', {
+                    key: 'window',
+                    style: {
+                        position: 'absolute',
+                        bottom: '80px',
+                        right: '0',
+                        width: '350px',
+                        height: '500px',
+                        backgroundColor: 'white',
+                        borderRadius: '12px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                        display: 'flex',
+                        flexDirection: 'column'
+                    }
+                }, [
+                    React.createElement('div', {
+                        key: 'header',
+                        style: {
+                            padding: '16px',
+                            backgroundColor: '#007bff',
+                            color: 'white',
+                            borderRadius: '12px 12px 0 0'
+                        }
+                    }, `Chat Support (${email})`),
+                    
+                    React.createElement('div', {
+                        key: 'messages',
+                        style: {
+                            flex: 1,
+                            padding: '16px',
+                            overflowY: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '12px'
+                        }
+                    }, messages.map((msg, idx) => 
+                        React.createElement('div', {
+                            key: idx,
+                            'data-testid': `message-${msg.sender_type}`,
+                            style: {
+                                padding: '12px',
+                                borderRadius: '12px',
+                                backgroundColor: msg.sender_type === 'user' ? '#007bff' : '#f1f3f4',
+                                color: msg.sender_type === 'user' ? 'white' : '#333',
+                                alignSelf: msg.sender_type === 'user' ? 'flex-end' : 'flex-start',
+                                maxWidth: '80%'
+                            }
+                        }, msg.content)
+                    )),
+                    
+                    React.createElement('div', {
+                        key: 'input',
+                        style: {
+                            padding: '16px',
+                            borderTop: '1px solid #e0e0e0',
+                            display: 'flex',
+                            gap: '8px'
+                        }
+                    }, [
+                        React.createElement('input', {
+                            key: 'text',
+                            'data-testid': 'message-input',
+                            type: 'text',
+                            value: newMessage,
+                            onChange: (e) => setNewMessage(e.target.value),
+                            onKeyPress: (e) => e.key === 'Enter' && sendMessage(),
+                            placeholder: 'Type your message...',
+                            style: {
+                                flex: 1,
+                                padding: '8px 12px',
+                                border: '1px solid #ddd',
+                                borderRadius: '20px'
+                            }
+                        }),
+                        React.createElement('button', {
+                            key: 'send',
+                            'data-testid': 'send-button',
+                            onClick: sendMessage,
+                            disabled: !socket || !conversationId || !newMessage.trim(),
+                            title: `Socket: ${!!socket}, ConvId: ${!!conversationId}, Msg: ${!!newMessage.trim()}`,
+                            style: {
+                                padding: '8px 16px',
+                                backgroundColor: (!socket || !conversationId || !newMessage.trim()) ? '#ccc' : '#007bff',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '20px',
+                                cursor: (!socket || !conversationId || !newMessage.trim()) ? 'not-allowed' : 'pointer'
+                            }
+                        }, 'Send')
+                    ])
+                ])
+            ]);
+        }
+
+        function renderWidget() {
+            const container = document.getElementById('chat-widget-container');
+            if (widgetRoot) {
+                widgetRoot.unmount();
+            }
+            widgetRoot = ReactDOM.createRoot(container);
+            widgetRoot.render(React.createElement(ChatWidget, { email: currentEmail }));
+        }
+
+        function switchUser(email) {
+            currentEmail = email;
+            document.getElementById('current-user').textContent = email;
+            
+            // Update active button
+            document.querySelectorAll('.email-inputs button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderWidget();
+        }
+
+        // Initialize widget
+        document.addEventListener('DOMContentLoaded', () => {
+            renderWidget();
+            document.querySelector('.email-inputs button').classList.add('active');
+        });
+    </script>
+</body>
+</html>

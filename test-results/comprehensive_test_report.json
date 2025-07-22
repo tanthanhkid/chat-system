@@ -1,0 +1,484 @@
+{
+  "timestamp": "2025-07-22T09:05:38.400702",
+  "duration_seconds": 0.028037,
+  "summary": {
+    "total": 62,
+    "passed": 62,
+    "failed": 0,
+    "success_rate": 100.0
+  },
+  "categories": {
+    "health": {
+      "total": 3,
+      "passed": 3
+    },
+    "socket_widget": {
+      "total": 8,
+      "passed": 8
+    },
+    "socket_admin": {
+      "total": 7,
+      "passed": 7
+    },
+    "socket_server": {
+      "total": 5,
+      "passed": 5
+    },
+    "api": {
+      "total": 3,
+      "passed": 3
+    },
+    "files": {
+      "total": 14,
+      "passed": 14
+    },
+    "dependencies": {
+      "total": 7,
+      "passed": 7
+    },
+    "css": {
+      "total": 8,
+      "passed": 8
+    },
+    "database": {
+      "total": 7,
+      "passed": 7
+    }
+  },
+  "results": [
+    {
+      "test": "Server Health",
+      "passed": true,
+      "details": "Status: 200",
+      "category": "health",
+      "timestamp": "2025-07-22T09:05:38.387191"
+    },
+    {
+      "test": "Admin Interface Health",
+      "passed": true,
+      "details": "Status: 200",
+      "category": "health",
+      "timestamp": "2025-07-22T09:05:38.389551"
+    },
+    {
+      "test": "Database Connectivity",
+      "passed": true,
+      "details": "Retrieved 4 conversations",
+      "category": "health",
+      "timestamp": "2025-07-22T09:05:38.392356"
+    },
+    {
+      "test": "Widget: Automatic Reconnection",
+      "passed": true,
+      "details": "",
+      "category": "socket_widget",
+      "timestamp": "2025-07-22T09:05:38.392645"
+    },
+    {
+      "test": "Widget: Reconnection Attempts",
+      "passed": true,
+      "details": "",
+      "category": "socket_widget",
+      "timestamp": "2025-07-22T09:05:38.392648"
+    },
+    {
+      "test": "Widget: Connection Error Handling",
+      "passed": true,
+      "details": "",
+      "category": "socket_widget",
+      "timestamp": "2025-07-22T09:05:38.392649"
+    },
+    {
+      "test": "Widget: Connection Status Display",
+      "passed": true,
+      "details": "",
+      "category": "socket_widget",
+      "timestamp": "2025-07-22T09:05:38.392650"
+    },
+    {
+      "test": "Widget: Retry Functionality",
+      "passed": true,
+      "details": "",
+      "category": "socket_widget",
+      "timestamp": "2025-07-22T09:05:38.392651"
+    },
+    {
+      "test": "Widget: Visual Connection Indicators",
+      "passed": true,
+      "details": "",
+      "category": "socket_widget",
+      "timestamp": "2025-07-22T09:05:38.392652"
+    },
+    {
+      "test": "Widget: Test Automation Ready",
+      "passed": true,
+      "details": "",
+      "category": "socket_widget",
+      "timestamp": "2025-07-22T09:05:38.392653"
+    },
+    {
+      "test": "Widget: Connection State Management",
+      "passed": true,
+      "details": "",
+      "category": "socket_widget",
+      "timestamp": "2025-07-22T09:05:38.392654"
+    },
+    {
+      "test": "Admin: Admin Reconnection Logic",
+      "passed": true,
+      "details": "",
+      "category": "socket_admin",
+      "timestamp": "2025-07-22T09:05:38.392848"
+    },
+    {
+      "test": "Admin: Connection Error Handling",
+      "passed": true,
+      "details": "",
+      "category": "socket_admin",
+      "timestamp": "2025-07-22T09:05:38.392849"
+    },
+    {
+      "test": "Admin: Retry Button",
+      "passed": true,
+      "details": "",
+      "category": "socket_admin",
+      "timestamp": "2025-07-22T09:05:38.392851"
+    },
+    {
+      "test": "Admin: Connection Status Header",
+      "passed": true,
+      "details": "",
+      "category": "socket_admin",
+      "timestamp": "2025-07-22T09:05:38.392852"
+    },
+    {
+      "test": "Admin: Connection State Management",
+      "passed": true,
+      "details": "",
+      "category": "socket_admin",
+      "timestamp": "2025-07-22T09:05:38.392852"
+    },
+    {
+      "test": "Admin: Error State Display",
+      "passed": true,
+      "details": "",
+      "category": "socket_admin",
+      "timestamp": "2025-07-22T09:05:38.392853"
+    },
+    {
+      "test": "Admin: Test Automation Ready",
+      "passed": true,
+      "details": "",
+      "category": "socket_admin",
+      "timestamp": "2025-07-22T09:05:38.392854"
+    },
+    {
+      "test": "Server: Enhanced Socket Config",
+      "passed": true,
+      "details": "",
+      "category": "socket_server",
+      "timestamp": "2025-07-22T09:05:38.393001"
+    },
+    {
+      "test": "Server: Ping Interval Setting",
+      "passed": true,
+      "details": "",
+      "category": "socket_server",
+      "timestamp": "2025-07-22T09:05:38.393002"
+    },
+    {
+      "test": "Server: Socket Error Handling",
+      "passed": true,
+      "details": "",
+      "category": "socket_server",
+      "timestamp": "2025-07-22T09:05:38.393003"
+    },
+    {
+      "test": "Server: Connection Logging",
+      "passed": true,
+      "details": "",
+      "category": "socket_server",
+      "timestamp": "2025-07-22T09:05:38.393004"
+    },
+    {
+      "test": "Server: Upgrade Timeout",
+      "passed": true,
+      "details": "",
+      "category": "socket_server",
+      "timestamp": "2025-07-22T09:05:38.393005"
+    },
+    {
+      "test": "Conversations API",
+      "passed": true,
+      "details": "Retrieved 4 conversations",
+      "category": "api",
+      "timestamp": "2025-07-22T09:05:38.394905"
+    },
+    {
+      "test": "Messages API",
+      "passed": true,
+      "details": "Retrieved 4 messages",
+      "category": "api",
+      "timestamp": "2025-07-22T09:05:38.397242"
+    },
+    {
+      "test": "CORS Configuration",
+      "passed": true,
+      "details": "CORS: *",
+      "category": "api",
+      "timestamp": "2025-07-22T09:05:38.398143"
+    },
+    {
+      "test": "File: Widget Component",
+      "passed": true,
+      "details": "packages/chat-widget/src/ChatWidget.tsx",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398189"
+    },
+    {
+      "test": "File: Widget CSS",
+      "passed": true,
+      "details": "packages/chat-widget/src/ChatWidget.css",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398195"
+    },
+    {
+      "test": "File: Widget Types",
+      "passed": true,
+      "details": "packages/chat-widget/src/types.ts",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398202"
+    },
+    {
+      "test": "File: Widget Package",
+      "passed": true,
+      "details": "packages/chat-widget/package.json",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398207"
+    },
+    {
+      "test": "File: Admin Component",
+      "passed": true,
+      "details": "packages/chat-admin/src/App.tsx",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398213"
+    },
+    {
+      "test": "File: Admin CSS",
+      "passed": true,
+      "details": "packages/chat-admin/src/App.css",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398218"
+    },
+    {
+      "test": "File: Admin Types",
+      "passed": true,
+      "details": "packages/chat-admin/src/types.ts",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398224"
+    },
+    {
+      "test": "File: Admin Package",
+      "passed": true,
+      "details": "packages/chat-admin/package.json",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398229"
+    },
+    {
+      "test": "File: Server Main",
+      "passed": true,
+      "details": "packages/chat-server/src/index.ts",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398233"
+    },
+    {
+      "test": "File: Server Database",
+      "passed": true,
+      "details": "packages/chat-server/src/database.ts",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398239"
+    },
+    {
+      "test": "File: Server Package",
+      "passed": true,
+      "details": "packages/chat-server/package.json",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398243"
+    },
+    {
+      "test": "File: Test HTML",
+      "passed": true,
+      "details": "test-embedding.html",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398248"
+    },
+    {
+      "test": "File: Docker Compose",
+      "passed": true,
+      "details": "docker-compose.yml",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398253"
+    },
+    {
+      "test": "File: Database Schema",
+      "passed": true,
+      "details": "database/init.sql",
+      "category": "files",
+      "timestamp": "2025-07-22T09:05:38.398260"
+    },
+    {
+      "test": "Widget Package: React",
+      "passed": true,
+      "details": "",
+      "category": "dependencies",
+      "timestamp": "2025-07-22T09:05:38.398475"
+    },
+    {
+      "test": "Widget Package: Socket.IO Client",
+      "passed": true,
+      "details": "",
+      "category": "dependencies",
+      "timestamp": "2025-07-22T09:05:38.398476"
+    },
+    {
+      "test": "Admin Package: React",
+      "passed": true,
+      "details": "",
+      "category": "dependencies",
+      "timestamp": "2025-07-22T09:05:38.398672"
+    },
+    {
+      "test": "Admin Package: Socket.IO Client",
+      "passed": true,
+      "details": "",
+      "category": "dependencies",
+      "timestamp": "2025-07-22T09:05:38.398673"
+    },
+    {
+      "test": "Server Package: Express",
+      "passed": true,
+      "details": "",
+      "category": "dependencies",
+      "timestamp": "2025-07-22T09:05:38.399561"
+    },
+    {
+      "test": "Server Package: Socket.IO",
+      "passed": true,
+      "details": "",
+      "category": "dependencies",
+      "timestamp": "2025-07-22T09:05:38.399563"
+    },
+    {
+      "test": "Server Package: PostgreSQL",
+      "passed": true,
+      "details": "",
+      "category": "dependencies",
+      "timestamp": "2025-07-22T09:05:38.399564"
+    },
+    {
+      "test": "Widget CSS: Connection Indicator Styles",
+      "passed": true,
+      "details": "",
+      "category": "css",
+      "timestamp": "2025-07-22T09:05:38.399716"
+    },
+    {
+      "test": "Widget CSS: Reconnecting Animation",
+      "passed": true,
+      "details": "",
+      "category": "css",
+      "timestamp": "2025-07-22T09:05:38.399718"
+    },
+    {
+      "test": "Widget CSS: Error State Styling",
+      "passed": true,
+      "details": "",
+      "category": "css",
+      "timestamp": "2025-07-22T09:05:38.399719"
+    },
+    {
+      "test": "Widget CSS: Status Indicator Styling",
+      "passed": true,
+      "details": "",
+      "category": "css",
+      "timestamp": "2025-07-22T09:05:38.399720"
+    },
+    {
+      "test": "Widget CSS: Retry Button Styling",
+      "passed": true,
+      "details": "",
+      "category": "css",
+      "timestamp": "2025-07-22T09:05:38.399721"
+    },
+    {
+      "test": "Admin CSS: Connection Status Styling",
+      "passed": true,
+      "details": "",
+      "category": "css",
+      "timestamp": "2025-07-22T09:05:38.399892"
+    },
+    {
+      "test": "Admin CSS: Error State Styling",
+      "passed": true,
+      "details": "",
+      "category": "css",
+      "timestamp": "2025-07-22T09:05:38.399893"
+    },
+    {
+      "test": "Admin CSS: Retry Button Styling",
+      "passed": true,
+      "details": "",
+      "category": "css",
+      "timestamp": "2025-07-22T09:05:38.399894"
+    },
+    {
+      "test": "Schema: Users Table",
+      "passed": true,
+      "details": "",
+      "category": "database",
+      "timestamp": "2025-07-22T09:05:38.400681"
+    },
+    {
+      "test": "Schema: Conversations Table",
+      "passed": true,
+      "details": "",
+      "category": "database",
+      "timestamp": "2025-07-22T09:05:38.400684"
+    },
+    {
+      "test": "Schema: Messages Table",
+      "passed": true,
+      "details": "",
+      "category": "database",
+      "timestamp": "2025-07-22T09:05:38.400687"
+    },
+    {
+      "test": "Schema: UUID Extension",
+      "passed": true,
+      "details": "",
+      "category": "database",
+      "timestamp": "2025-07-22T09:05:38.400690"
+    },
+    {
+      "test": "Schema: Foreign Key Constraints",
+      "passed": true,
+      "details": "",
+      "category": "database",
+      "timestamp": "2025-07-22T09:05:38.400693"
+    },
+    {
+      "test": "Schema: Indexes",
+      "passed": true,
+      "details": "",
+      "category": "database",
+      "timestamp": "2025-07-22T09:05:38.400695"
+    },
+    {
+      "test": "Schema: Triggers",
+      "passed": true,
+      "details": "",
+      "category": "database",
+      "timestamp": "2025-07-22T09:05:38.400698"
+    }
+  ]
+}
