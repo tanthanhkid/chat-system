@@ -20,8 +20,14 @@ function App() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [messageOffset, setMessageOffset] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
+  const [showUnreadDropdown, setShowUnreadDropdown] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const selectedConversationRef = useRef<string | null>(null);
   const reconnectAttempts = useRef(0);
@@ -178,10 +184,57 @@ function App() {
       if (selectedConversation !== message.conversation_id || !document.hasFocus()) {
         setUnreadCount(prev => prev + 1);
       }
+      
+      // Refresh unread messages list
+      fetchUnreadMessages();
     });
 
     socket.on('new-admin-message', (message: Message) => {
-      setMessages(prev => [...prev, message]);
+
+      // Replace optimistic message with real message from server
+      setMessages(prev => {
+        // Find if there's an optimistic message with similar content and timestamp
+        const optimisticIndex = prev.findIndex(msg => 
+          msg.sender_type === 'admin' && 
+          msg.id.startsWith('temp-') &&
+          msg.content === message.content &&
+          Math.abs(new Date(msg.created_at).getTime() - new Date(message.created_at).getTime()) < 10000 // Within 10 seconds (increased from 5)
+        );
+        
+        // Also check for exact content match within last 3 admin messages
+        const recentAdminIndex = prev.slice(-5).findIndex((msg, index, arr) => 
+          msg.sender_type === 'admin' && 
+          msg.id.startsWith('temp-') &&
+          msg.content === message.content
+        );
+        
+        
+        // Use the optimistic index if found, otherwise use recent admin index
+        const replaceIndex = optimisticIndex !== -1 ? optimisticIndex : 
+                            (recentAdminIndex !== -1 ? prev.length - 5 + recentAdminIndex : -1);
+        
+        if (replaceIndex !== -1) {
+          // Replace optimistic message with real one
+          const newMessages = [...prev];
+          newMessages[replaceIndex] = message;
+          return newMessages;
+        } else {
+          // Check for duplicates first
+          const isDuplicate = prev.some(msg => 
+            msg.content === message.content && 
+            msg.sender_type === 'admin' && 
+            !msg.id.startsWith('temp-') &&
+            Math.abs(new Date(msg.created_at).getTime() - new Date(message.created_at).getTime()) < 1000
+          );
+          
+          if (isDuplicate) {
+            return prev;
+          }
+          
+          // No optimistic message found, add normally
+          return [...prev, message];
+        }
+      });
     });
 
     socket.on('user-typing', (data: { email: string, conversationId: string }) => {
@@ -211,6 +264,26 @@ function App() {
       setBroadcastMessage('');
     });
 
+    socket.on('message-read', (data: { messageId: string; readBy: string; readAt: string }) => {
+      // Update message status in current messages
+      setMessages(prev => prev.map(msg => 
+        msg.id === data.messageId 
+          ? { ...msg, read_at: data.readAt, read_status: { ...msg.read_status, [data.readBy]: data.readAt } }
+          : msg
+      ));
+    });
+
+    socket.on('conversation-read', (data: { conversationId: string; readBy: string; readAt: string }) => {
+      // Update all messages in the conversation as read
+      if (selectedConversationRef.current === data.conversationId) {
+        setMessages(prev => prev.map(msg => 
+          msg.sender_type === 'user' 
+            ? { ...msg, read_at: data.readAt, read_status: { ...msg.read_status, [data.readBy]: data.readAt } }
+            : msg
+        ));
+      }
+    });
+
     socket.on('error', (error: { message: string }) => {
       console.error('Admin socket error:', error.message);
       setConnectionError(error.message);
@@ -227,6 +300,13 @@ function App() {
       }
     };
   }, [connectToServer]);
+
+  // Fetch unread messages on component mount and periodically
+  useEffect(() => {
+    fetchUnreadMessages();
+    const interval = setInterval(fetchUnreadMessages, 30000); // Refresh every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   // Initialize notifications
   const initializeNotifications = async () => {
@@ -284,13 +364,50 @@ function App() {
     }
   };
 
-  const fetchMessages = async (conversationId: string) => {
+  const fetchMessages = async (conversationId: string, reset: boolean = true) => {
     try {
-      const response = await fetch(`${SERVER_URL}/api/conversations/${conversationId}/messages`);
-      const data = await response.json();
-      setMessages(data);
+      if (reset) {
+        // Load initial 10 messages for new conversation
+        const response = await fetch(`${SERVER_URL}/api/conversations/${conversationId}/messages?offset=0&limit=10&direction=desc`);
+        const data = await response.json();
+        
+        if (data.messages) {
+          setMessages(data.messages);
+          setMessageOffset(10);
+          setHasMoreMessages(data.pagination?.hasMore || false);
+        } else {
+          // Fallback for legacy API response
+          setMessages(data.slice(-10));
+          setMessageOffset(10);
+          setHasMoreMessages(data.length > 10);
+        }
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
+    }
+  };
+
+  const loadMoreMessages = async () => {
+    if (!selectedConversation || isLoadingHistory || !hasMoreMessages) return;
+
+    setIsLoadingHistory(true);
+    try {
+      const response = await fetch(
+        `${SERVER_URL}/api/conversations/${selectedConversation}/messages?offset=${messageOffset}&limit=10&direction=desc`
+      );
+      const data = await response.json();
+      
+      if (data.messages && data.messages.length > 0) {
+        setMessages(prev => [...data.messages, ...prev]);
+        setMessageOffset(prev => prev + data.messages.length);
+        setHasMoreMessages(data.pagination?.hasMore || false);
+      } else {
+        setHasMoreMessages(false);
+      }
+    } catch (error) {
+      console.error('Error loading more messages:', error);
+    } finally {
+      setIsLoadingHistory(false);
     }
   };
 
@@ -298,8 +415,21 @@ function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleMessagesScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop } = messagesContainerRef.current;
+      
+      // Load more messages if user scrolls to top
+      if (scrollTop < 50 && hasMoreMessages && !isLoadingHistory) {
+        loadMoreMessages();
+      }
+    }
+  };
+
   const sendMessage = () => {
     if (!newMessage.trim() || !selectedConversation || !socketRef.current) return;
+
+    const messageContent = newMessage.trim();
 
     // Stop typing indicator
     if (isTyping) {
@@ -309,9 +439,29 @@ function App() {
       setIsTyping(false);
     }
 
+    // Optimistic update - immediately show the admin message
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`, // Temporary ID
+      conversation_id: selectedConversation,
+      content: messageContent,
+      sender_type: 'admin',
+      created_at: new Date().toISOString(),
+      delivered_at: null,
+      read_at: null,
+      read_status: {}
+    };
+
+    // Add message to UI immediately
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    // Force scroll to bottom after optimistic update
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+
     socketRef.current.emit('admin-message', {
       conversationId: selectedConversation,
-      content: newMessage.trim()
+      content: messageContent
     });
 
     setNewMessage('');
@@ -361,7 +511,19 @@ function App() {
     });
     setSelectedConversation(conversationId);
     selectedConversationRef.current = conversationId; // Update ref for socket handlers
+    
+    // Reset pagination state for new conversation
+    setMessageOffset(0);
+    setHasMoreMessages(true);
+    setIsLoadingHistory(false);
+    
     fetchMessages(conversationId);
+    
+    // Mark conversation as read when admin selects it
+    if (socketRef.current) {
+      socketRef.current.emit('mark-conversation-read', { conversationId });
+    }
+    
     // Clear unread count for this conversation
     if (document.hasFocus()) {
       setUnreadCount(0);
@@ -379,6 +541,16 @@ function App() {
     return date.toLocaleDateString();
   };
 
+  const fetchUnreadMessages = async () => {
+    try {
+      const response = await fetch(`${SERVER_URL}/api/unread-messages?limit=10`);
+      const data = await response.json();
+      setUnreadMessages(data);
+    } catch (error) {
+      console.error('Error fetching unread messages:', error);
+    }
+  };
+
   const retryConnection = () => {
     setConnectionError(null);
     connectToServer();
@@ -391,6 +563,32 @@ function App() {
     return 'Connecting...';
   };
 
+  const getMessageStatus = (message: Message) => {
+    if (message.sender_type === 'user') return null; // User messages don't show status
+    
+    if (message.read_at) {
+      return 'read'; // Double blue tick
+    } else if (message.delivered_at) {
+      return 'delivered'; // Double gray tick  
+    } else {
+      return 'sent'; // Single gray tick
+    }
+  };
+
+  const MessageStatusIndicator: React.FC<{ message: Message }> = ({ message }) => {
+    const status = getMessageStatus(message);
+    
+    if (!status) return null;
+    
+    return (
+      <span className={`message-status ${status}`}>
+        {status === 'sent' && '✓'}
+        {status === 'delivered' && '✓✓'}
+        {status === 'read' && '✓✓'}
+      </span>
+    );
+  };
+
   const selectedConv = conversations.find(c => c.id === selectedConversation);
 
   return (
@@ -398,15 +596,82 @@ function App() {
       <header className="admin-header">
         <h1>Chat Admin Dashboard</h1>
         <div className="header-controls">
-          <div className={`notification-status ${notificationsEnabled ? 'enabled' : 'disabled'}`}>
-            {notificationsEnabled ? '🔔' : '🔕'} 
-            {notificationsEnabled ? 'Notifications On' : 'Notifications Off'}
-          </div>
-          {unreadCount > 0 && (
-            <div className="unread-badge">
-              {unreadCount > 99 ? '99+' : unreadCount}
+          <div className="notification-controls">
+            <div className={`notification-status ${notificationsEnabled ? 'enabled' : 'disabled'}`}>
+              {notificationsEnabled ? '🔔' : '🔕'} 
+              {notificationsEnabled ? 'Notifications On' : 'Notifications Off'}
             </div>
-          )}
+            {!notificationsEnabled && (
+              <button 
+                className="enable-notifications-btn"
+                onClick={async () => {
+                  const granted = await notificationService.requestPermission();
+                  setNotificationsEnabled(granted);
+                }}
+                title="Enable browser notifications"
+              >
+                Enable Notifications
+              </button>
+            )}
+          </div>
+          <div className="unread-notifications">
+            <button 
+              className={`unread-btn ${unreadCount > 0 ? 'has-unread' : ''}`}
+              onClick={() => setShowUnreadDropdown(!showUnreadDropdown)}
+              title="Unread messages"
+            >
+              🔔
+              {unreadCount > 0 && (
+                <span className="unread-badge">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+            
+            {showUnreadDropdown && (
+              <div className="unread-dropdown">
+                <div className="unread-dropdown-header">
+                  <h4>Unread Messages ({unreadMessages.length})</h4>
+                  <button 
+                    className="close-dropdown"
+                    onClick={() => setShowUnreadDropdown(false)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="unread-messages-list">
+                  {unreadMessages.length === 0 ? (
+                    <div className="no-unread">No unread messages</div>
+                  ) : (
+                    unreadMessages.map((msg, index) => (
+                      <div 
+                        key={msg.id || index}
+                        className="unread-message-item"
+                        onClick={() => {
+                          selectConversation(msg.conversation_id);
+                          setShowUnreadDropdown(false);
+                        }}
+                      >
+                        <div className="unread-msg-header">
+                          <span className="user-email">{msg.user_email}</span>
+                          <span className="msg-time">{formatTime(msg.created_at)}</span>
+                        </div>
+                        <div className="unread-msg-content">
+                          {msg.content.substring(0, 60)}
+                          {msg.content.length > 60 ? '...' : ''}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                  {unreadMessages.length >= 10 && (
+                    <div className="show-more-unread">
+                      <button onClick={() => fetchUnreadMessages()}>Show More</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           <div className={`connection-status ${isConnected ? 'connected' : connectionError ? 'error' : 'disconnected'}`}>
             {getConnectionStatus()}
             {connectionError && (
@@ -532,7 +797,18 @@ function App() {
                 </div>
               </div>
 
-              <div className="messages-container" data-testid="admin-messages">
+              <div 
+                className="messages-container" 
+                data-testid="admin-messages"
+                ref={messagesContainerRef}
+                onScroll={handleMessagesScroll}
+              >
+                {isLoadingHistory && (
+                  <div className="loading-history">
+                    <div className="loading-spinner"></div>
+                    <p>Loading more messages...</p>
+                  </div>
+                )}
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -545,7 +821,10 @@ function App() {
                         <span className="sender">
                           {message.sender_type === 'admin' ? 'Admin' : selectedConv?.user_email}
                         </span>
-                        <span className="time">{formatTime(message.created_at)}</span>
+                        <div className="time-and-status">
+                          <span className="time">{formatTime(message.created_at)}</span>
+                          <MessageStatusIndicator message={message} />
+                        </div>
                       </div>
                     </div>
                   </div>

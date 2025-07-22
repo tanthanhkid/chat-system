@@ -99,184 +99,129 @@
     <!-- Chat Widget Container -->
     <div id="chat-widget-container"></div>
 
-    <!-- React and ReactDOM from CDN for demo -->
+    <!-- Built Widget CSS -->
+    <link rel="stylesheet" href="packages/chat-widget/dist/style.css">
+
+    <!-- React Dependencies (CDN) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/socket.io-client@4/dist/socket.io.js"></script>
+    
+    <!-- Process polyfill for browser compatibility -->
+    <script>
+        if (typeof process === 'undefined') {
+            window.process = {
+                env: {
+                    NODE_ENV: 'production'
+                }
+            };
+        }
+    </script>
+    
+    <!-- Built Widget UMD Bundle -->
+    <script src="packages/chat-widget/dist/index.umd.js"></script>
 
     <!-- Demo Widget Implementation -->
     <script>
-        // Simple demo implementation - in production you'd use the built library
+        // Using the built chat widget library
         let currentEmail = 'user1@example.com';
         let widgetRoot = null;
+        let loadingAttempts = 0;
+        const maxRetries = 3;
 
-        // Mock ChatWidget component for demo
-        function ChatWidget({ email }) {
-            const [isOpen, setIsOpen] = React.useState(false);
-            const [messages, setMessages] = React.useState([]);
-            const [newMessage, setNewMessage] = React.useState('');
-            const [socket, setSocket] = React.useState(null);
-            const [conversationId, setConversationId] = React.useState(null);
+        function showLoadingState(container, message = 'Loading widget...') {
+            container.innerHTML = `
+                <div style="position: fixed; bottom: 20px; right: 20px; background: #007bff; color: white; padding: 12px 16px; border-radius: 8px; font-family: Arial, sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 16px; height: 16px; border: 2px solid white; border-top: 2px solid transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                        ${message}
+                    </div>
+                    <style>
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    </style>
+                </div>
+            `;
+        }
 
-            React.useEffect(() => {
-                const newSocket = io('http://localhost:3001');
-                setSocket(newSocket);
+        function showErrorState(container, error) {
+            console.error('Widget loading error:', error);
+            container.innerHTML = `
+                <div style="position: fixed; bottom: 20px; right: 20px; background: #dc3545; color: white; padding: 12px 16px; border-radius: 8px; font-family: Arial, sans-serif; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 300px;">
+                    <div style="font-weight: bold; margin-bottom: 4px;">⚠️ Widget Error</div>
+                    <div style="font-size: 12px; opacity: 0.9; margin-bottom: 8px;">${error}</div>
+                    ${loadingAttempts < maxRetries ? 
+                        '<button onclick="retryWidgetLoad()" style="background: white; color: #dc3545; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;">Retry</button>' : 
+                        '<div style="font-size: 11px;">Max retries exceeded. Check console for details.</div>'
+                    }
+                </div>
+            `;
+        }
 
-                newSocket.on('connect', () => {
-                    console.log('Socket connected, emitting join-user for:', email);
-                    newSocket.emit('join-user', { email });
-                });
-
-                newSocket.on('conversation-joined', (data) => {
-                    console.log('Received conversation-joined:', data);
-                    setConversationId(data.conversationId);
-                    setMessages(data.messages);
-                });
-
-                newSocket.on('new-message', (message) => {
-                    setMessages(prev => [...prev, message]);
-                });
-
-                return () => newSocket.disconnect();
-            }, [email]);
-
-            const sendMessage = () => {
-                if (!newMessage.trim() || !socket || !conversationId) return;
-                socket.emit('user-message', {
-                    conversationId,
-                    content: newMessage.trim(),
-                    email
-                });
-                setNewMessage('');
+        function checkDependencies() {
+            const deps = {
+                React: !!window.React,
+                ReactDOM: !!window.ReactDOM,
+                ChatWidget: !!(window.ChatWidget && window.ChatWidget.ChatWidget)
             };
-
-            return React.createElement('div', {
-                style: {
-                    position: 'fixed',
-                    bottom: '20px',
-                    right: '20px',
-                    zIndex: 9999,
-                    fontFamily: 'Arial, sans-serif'
-                }
-            }, [
-                React.createElement('button', {
-                    key: 'toggle',
-                    'data-testid': 'chat-toggle-button',
-                    onClick: () => setIsOpen(!isOpen),
-                    style: {
-                        width: '60px',
-                        height: '60px',
-                        borderRadius: '50%',
-                        border: 'none',
-                        backgroundColor: '#007bff',
-                        color: 'white',
-                        fontSize: '24px',
-                        cursor: 'pointer',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                    }
-                }, isOpen ? '✕' : '💬'),
-                
-                isOpen && React.createElement('div', {
-                    key: 'window',
-                    style: {
-                        position: 'absolute',
-                        bottom: '80px',
-                        right: '0',
-                        width: '350px',
-                        height: '500px',
-                        backgroundColor: 'white',
-                        borderRadius: '12px',
-                        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                        display: 'flex',
-                        flexDirection: 'column'
-                    }
-                }, [
-                    React.createElement('div', {
-                        key: 'header',
-                        style: {
-                            padding: '16px',
-                            backgroundColor: '#007bff',
-                            color: 'white',
-                            borderRadius: '12px 12px 0 0'
-                        }
-                    }, `Chat Support (${email})`),
-                    
-                    React.createElement('div', {
-                        key: 'messages',
-                        style: {
-                            flex: 1,
-                            padding: '16px',
-                            overflowY: 'auto',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '12px'
-                        }
-                    }, messages.map((msg, idx) => 
-                        React.createElement('div', {
-                            key: idx,
-                            'data-testid': `message-${msg.sender_type}`,
-                            style: {
-                                padding: '12px',
-                                borderRadius: '12px',
-                                backgroundColor: msg.sender_type === 'user' ? '#007bff' : '#f1f3f4',
-                                color: msg.sender_type === 'user' ? 'white' : '#333',
-                                alignSelf: msg.sender_type === 'user' ? 'flex-end' : 'flex-start',
-                                maxWidth: '80%'
-                            }
-                        }, msg.content)
-                    )),
-                    
-                    React.createElement('div', {
-                        key: 'input',
-                        style: {
-                            padding: '16px',
-                            borderTop: '1px solid #e0e0e0',
-                            display: 'flex',
-                            gap: '8px'
-                        }
-                    }, [
-                        React.createElement('input', {
-                            key: 'text',
-                            'data-testid': 'message-input',
-                            type: 'text',
-                            value: newMessage,
-                            onChange: (e) => setNewMessage(e.target.value),
-                            onKeyPress: (e) => e.key === 'Enter' && sendMessage(),
-                            placeholder: 'Type your message...',
-                            style: {
-                                flex: 1,
-                                padding: '8px 12px',
-                                border: '1px solid #ddd',
-                                borderRadius: '20px'
-                            }
-                        }),
-                        React.createElement('button', {
-                            key: 'send',
-                            'data-testid': 'send-button',
-                            onClick: sendMessage,
-                            disabled: !socket || !conversationId || !newMessage.trim(),
-                            title: `Socket: ${!!socket}, ConvId: ${!!conversationId}, Msg: ${!!newMessage.trim()}`,
-                            style: {
-                                padding: '8px 16px',
-                                backgroundColor: (!socket || !conversationId || !newMessage.trim()) ? '#ccc' : '#007bff',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '20px',
-                                cursor: (!socket || !conversationId || !newMessage.trim()) ? 'not-allowed' : 'pointer'
-                            }
-                        }, 'Send')
-                    ])
-                ])
-            ]);
+            
+            const missing = Object.entries(deps).filter(([_, loaded]) => !loaded).map(([name, _]) => name);
+            
+            if (missing.length > 0) {
+                throw new Error(`Missing dependencies: ${missing.join(', ')}`);
+            }
+            
+            return true;
         }
 
         function renderWidget() {
             const container = document.getElementById('chat-widget-container');
-            if (widgetRoot) {
-                widgetRoot.unmount();
+            
+            try {
+                // Show loading state
+                showLoadingState(container);
+                
+                // Check all dependencies are loaded
+                checkDependencies();
+                
+                // Clear container
+                container.innerHTML = '';
+                
+                // Create the widget element using React.createElement
+                const widget = window.React.createElement(window.ChatWidget.ChatWidget, {
+                    email: currentEmail,
+                    serverUrl: 'http://localhost:3001',
+                    primaryColor: '#833ab4', // Instagram gradient color
+                    position: 'bottom-right'
+                });
+                
+                // Mount the widget using ReactDOM
+                if (window.ReactDOM.createRoot) {
+                    // For React 18+
+                    if (widgetRoot) {
+                        widgetRoot.unmount();
+                    }
+                    widgetRoot = window.ReactDOM.createRoot(container);
+                    widgetRoot.render(widget);
+                } else if (window.ReactDOM.render) {
+                    // For older ReactDOM versions
+                    window.ReactDOM.render(widget, container);
+                } else {
+                    throw new Error('ReactDOM render method not found');
+                }
+                
+                console.log('✅ Widget rendered successfully for:', currentEmail);
+                
+            } catch (error) {
+                showErrorState(container, error.message);
             }
-            widgetRoot = ReactDOM.createRoot(container);
-            widgetRoot.render(React.createElement(ChatWidget, { email: currentEmail }));
+        }
+
+        function retryWidgetLoad() {
+            loadingAttempts++;
+            console.log(`Retry attempt ${loadingAttempts}/${maxRetries}`);
+            setTimeout(renderWidget, 1000); // Wait 1 second before retry
         }
 
         function switchUser(email) {
@@ -289,13 +234,59 @@
             });
             event.target.classList.add('active');
             
+            // Reset retry counter
+            loadingAttempts = 0;
             renderWidget();
         }
 
-        // Initialize widget
+        function waitForDependencies(callback, timeout = 10000) {
+            const start = Date.now();
+            
+            function check() {
+                try {
+                    checkDependencies();
+                    callback();
+                } catch (error) {
+                    if (Date.now() - start > timeout) {
+                        console.error('Timeout waiting for dependencies:', error);
+                        const container = document.getElementById('chat-widget-container');
+                        showErrorState(container, 'Timeout loading dependencies. Check network connection.');
+                    } else {
+                        setTimeout(check, 100);
+                    }
+                }
+            }
+            
+            check();
+        }
+
+        // Initialize widget when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
-            renderWidget();
-            document.querySelector('.email-inputs button').classList.add('active');
+            console.log('🚀 Initializing chat widget...');
+            
+            // Show initial loading state
+            const container = document.getElementById('chat-widget-container');
+            showLoadingState(container, 'Initializing widget...');
+            
+            // Wait for all dependencies to load
+            waitForDependencies(() => {
+                renderWidget();
+                
+                // Activate first button
+                const firstButton = document.querySelector('.email-inputs button');
+                if (firstButton) {
+                    firstButton.classList.add('active');
+                }
+            });
+        });
+
+        // Global error handler
+        window.addEventListener('error', (event) => {
+            if (event.filename && event.filename.includes('index.umd.js')) {
+                console.error('UMD Bundle error:', event);
+                const container = document.getElementById('chat-widget-container');
+                showErrorState(container, 'Failed to load widget bundle');
+            }
         });
     </script>
 </body>

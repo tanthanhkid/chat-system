@@ -30,6 +30,9 @@ export interface Message {
   sender_type: 'user' | 'admin';
   content: string;
   created_at: Date;
+  delivered_at?: Date;
+  read_at?: Date;
+  read_status: Record<string, any>;
 }
 
 export class Database {
@@ -62,8 +65,8 @@ export class Database {
 
   async saveMessage(conversationId: string, senderType: 'user' | 'admin', content: string): Promise<Message> {
     const query = `
-      INSERT INTO messages (conversation_id, sender_type, content)
-      VALUES ($1, $2, $3)
+      INSERT INTO messages (conversation_id, sender_type, content, delivered_at)
+      VALUES ($1, $2, $3, NOW())
       RETURNING *
     `;
     const result = await pool.query(query, [conversationId, senderType, content]);
@@ -79,6 +82,75 @@ export class Database {
     `;
     const result = await pool.query(query, [conversationId, limit]);
     return result.rows;
+  }
+
+  async getMessagesWithPagination(
+    conversationId: string, 
+    offset: number = 0, 
+    limit: number = 10, 
+    direction: 'asc' | 'desc' = 'desc'
+  ): Promise<Message[]> {
+    const query = `
+      SELECT * FROM messages 
+      WHERE conversation_id = $1 
+      ORDER BY created_at ${direction.toUpperCase()} 
+      LIMIT $2 OFFSET $3
+    `;
+    const result = await pool.query(query, [conversationId, limit, offset]);
+    return direction === 'desc' ? result.rows.reverse() : result.rows;
+  }
+
+  async getUnreadMessages(userEmail?: string, limit: number = 10): Promise<(Message & { user_email?: string })[]> {
+    let query = `
+      SELECT m.*, c.user_email 
+      FROM messages m
+      JOIN conversations c ON m.conversation_id = c.id
+      WHERE m.sender_type = 'user' AND m.read_at IS NULL
+    `;
+    const params: any[] = [];
+    
+    if (userEmail) {
+      query += ` AND c.user_email = $1`;
+      params.push(userEmail);
+    }
+    
+    query += ` ORDER BY m.created_at DESC LIMIT $${params.length + 1}`;
+    params.push(limit);
+    
+    const result = await pool.query(query, params);
+    return result.rows;
+  }
+
+  async markMessageAsRead(messageId: string, readBy: string): Promise<Message> {
+    const query = `
+      UPDATE messages 
+      SET read_at = NOW(), 
+          read_status = read_status || $2::jsonb
+      WHERE id = $1
+      RETURNING *
+    `;
+    const readStatus = JSON.stringify({ [readBy]: new Date().toISOString() });
+    const result = await pool.query(query, [messageId, readStatus]);
+    return result.rows[0];
+  }
+
+  async markConversationAsRead(conversationId: string, readBy: string): Promise<number> {
+    const query = `
+      UPDATE messages 
+      SET read_at = NOW(), 
+          read_status = read_status || $2::jsonb
+      WHERE conversation_id = $1 AND read_at IS NULL
+      RETURNING id
+    `;
+    const readStatus = JSON.stringify({ [readBy]: new Date().toISOString() });
+    const result = await pool.query(query, [conversationId, readStatus]);
+    return result.rowCount || 0;
+  }
+
+  async getMessageCount(conversationId: string): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM messages WHERE conversation_id = $1`;
+    const result = await pool.query(query, [conversationId]);
+    return parseInt(result.rows[0].count);
   }
 
   async getAllConversations(): Promise<(Conversation & { latest_message?: Message })[]> {

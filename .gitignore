@@ -1,3 +1,12 @@
 /node_modules
 .pytest_cache
 *.log
+debug_*.py
+test_*.py
+manual_*.py
+*debug*.py
+*temp*.py
+verify_*.py
+two_browser*.py
+realtime_*.py
+simultaneous_*.py

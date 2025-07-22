@@ -1,8 +1,5 @@
-chat widget tự động scroll xuống tin nhắn mới nhất khi nhận tin nhắn mới từ admin hoặc tin nhắn broadcast.
-chat widget chỉ load 10 tin nhắn mới nhất, khi user scroll lên thêm thì mới load tin nhắn cũ hơn.
-admin interface chat windows chỉ load 10 tin nhắn mới nhất, khi admin scroll lên thêm thì mới load tin nhắn cũ hơn.
-admin interface alert trên header khi click vào thì cho phép hiển thị 10 tin nhắn mới nhất từ user mà chưa đọc.
-khi user và admin chat với nhau, sẽ có tick đã gửi, đã đọc từ cả 2 phía để admin và user thấy được trạng thái của tin nhắn và biết được đã đọc hay chưa.
-ở giao diện của admin interface, trên header khi click vào phần thông báo thì popup dropdown danh sách 10 tin nhắn mới nhất chưa đọc (bấm xem thêm để load thêm nếu còn tin chưa đọc). khi click vào thì mở chat windows với user tương ứng với tin nhắn chưa đọc đó.
-thêm nút "kích hoạt thông báo" để enable thông báo và xin quyền ở chrome, để khi có tin nhắn thì chrome sẽ gửi thông báo cho admin.
-rà soát lại các script python và js trong toàn bộ dự án, script nào cần thiết thì giữ lại, các script phát sinh trong quá trình debug hoặc log thì xoá đi.
+
+lỗi: 
+- trên admin interface , khi admin gửi tin nhắn cho user thì tin nhắn của admin phải nằm bên phải. tin nhắn của user phải nằm bên trái. hiện tại đang sai.
+- trên admin interface , khi admin bấm send thì tin nhắn không hiển thị ngay trong khung chat , phải reload lại mới thấy tin nhắn admin gửi đi. còn tin nhắn user gửi lên thì hiển thị ngay.
+- cải tổ UIUX lại giống IOS 26 cả về màu sắc và giao diện, hiệu ứng, màu sắc hài hoà tổng thể, suy nghĩ kỹ việc này.

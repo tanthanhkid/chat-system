@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="45.129" timestamp="2025-07-22T14:07:49.583176" hostname="thanhs-Mac-mini.local"><testcase classname="tests.selenium.enhanced.test_enhanced_widget.TestEnhancedWidget" name="test_widget_auto_scroll_behavior" time="45.055"><failure message="selenium.common.exceptions.TimeoutException: Message: &#10;Stacktrace:&#10;0   chromedriver                        0x0000000100d7755c cxxbridge1$str$ptr + 2731064&#10;1   chromedriver                        0x0000000100d6f454 cxxbridge1$str$ptr + 2698032&#10;2   chromedriver                        0x00000001008be3f8 cxxbridge1$string$len + 90664&#10;3   chromedriver                        0x000000010090571c cxxbridge1$string$len + 382284&#10;4   chromedriver                        0x0000000100946b1c cxxbridge1$string$len + 649548&#10;5   chromedriver                        0x00000001008f9a0c cxxbridge1$string$len + 333884&#10;6   chromedriver                        0x0000000100d3a5e0 cxxbridge1$str$ptr + 2481340&#10;7   chromedriver                        0x0000000100d3d848 cxxbridge1$str$ptr + 2494244&#10;8   chromedriver                        0x0000000100d1b234 cxxbridge1$str$ptr + 2353424&#10;9   chromedriver                        0x0000000100d3e104 cxxbridge1$str$ptr + 2496480&#10;10  chromedriver                        0x0000000100d0c2e4 cxxbridge1$str$ptr + 2292160&#10;11  chromedriver                        0x0000000100d5dff8 cxxbridge1$str$ptr + 2627284&#10;12  chromedriver                        0x0000000100d5e184 cxxbridge1$str$ptr + 2627680&#10;13  chromedriver                        0x0000000100d6f090 cxxbridge1$str$ptr + 2697068&#10;14  libsystem_pthread.dylib             0x00000001884a8c0c _pthread_start + 136&#10;15  libsystem_pthread.dylib             0x00000001884a3b80 thread_start + 8">tests/selenium/enhanced/test_enhanced_widget.py:39: in test_widget_auto_scroll_behavior
+    chat_window = utils.wait_for_element(chrome_driver, By.CSS_SELECTOR, "[data-testid='chat-window']")
+tests/conftest.py:216: in wait_for_element
+    return wait.until(EC.visibility_of_element_located((by, value)))
+../../../../Library/Python/3.9/lib/python/site-packages/selenium/webdriver/support/wait.py:101: in until
+    raise TimeoutException(message, screen, stacktrace)
+E   selenium.common.exceptions.TimeoutException: Message: 
+E   Stacktrace:
+E   0   chromedriver                        0x0000000100d7755c cxxbridge1$str$ptr + 2731064
+E   1   chromedriver                        0x0000000100d6f454 cxxbridge1$str$ptr + 2698032
+E   2   chromedriver                        0x00000001008be3f8 cxxbridge1$string$len + 90664
+E   3   chromedriver                        0x000000010090571c cxxbridge1$string$len + 382284
+E   4   chromedriver                        0x0000000100946b1c cxxbridge1$string$len + 649548
+E   5   chromedriver                        0x00000001008f9a0c cxxbridge1$string$len + 333884
+E   6   chromedriver                        0x0000000100d3a5e0 cxxbridge1$str$ptr + 2481340
+E   7   chromedriver                        0x0000000100d3d848 cxxbridge1$str$ptr + 2494244
+E   8   chromedriver                        0x0000000100d1b234 cxxbridge1$str$ptr + 2353424
+E   9   chromedriver                        0x0000000100d3e104 cxxbridge1$str$ptr + 2496480
+E   10  chromedriver                        0x0000000100d0c2e4 cxxbridge1$str$ptr + 2292160
+E   11  chromedriver                        0x0000000100d5dff8 cxxbridge1$str$ptr + 2627284
+E   12  chromedriver                        0x0000000100d5e184 cxxbridge1$str$ptr + 2627680
+E   13  chromedriver                        0x0000000100d6f090 cxxbridge1$str$ptr + 2697068
+E   14  libsystem_pthread.dylib             0x00000001884a8c0c _pthread_start + 136
+E   15  libsystem_pthread.dylib             0x00000001884a3b80 thread_start + 8</failure></testcase></testsuite></testsuites>

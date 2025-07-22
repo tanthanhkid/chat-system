@@ -17,9 +17,14 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
+  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [hasMoreMessages, setHasMoreMessages] = useState(true);
+  const [messageOffset, setMessageOffset] = useState(0);
 
   const connectToServer = useCallback(() => {
     if (socketRef.current) {
@@ -80,18 +85,45 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
     socket.on('conversation-joined', (data: { conversationId: string; messages: Message[] }) => {
       setConversationId(data.conversationId);
-      setMessages(data.messages);
+      // Only load initial 10 messages
+      const initialMessages = data.messages.slice(-10);
+      setMessages(initialMessages);
+      setMessageOffset(initialMessages.length);
+      setHasMoreMessages(data.messages.length > 10);
     });
 
     socket.on('new-message', (message: Message) => {
       setMessages(prev => [...prev, message]);
+      
+      // Mark admin messages as read automatically when received
+      if (message.sender_type === 'admin' && isOpen) {
+        socket.emit('mark-message-read', { messageId: message.id });
+      }
+    });
+
+    socket.on('message-read', (data: { messageId: string; readBy: string; readAt: string }) => {
+      // Update message status
+      setMessages(prev => prev.map(msg => 
+        msg.id === data.messageId 
+          ? { ...msg, read_at: data.readAt, read_status: { ...msg.read_status, [data.readBy]: data.readAt } }
+          : msg
+      ));
+    });
+
+    socket.on('conversation-read', (data: { conversationId: string; readBy: string; readAt: string }) => {
+      // Update all admin messages as read
+      setMessages(prev => prev.map(msg => 
+        msg.sender_type === 'admin' && data.readBy === 'user'
+          ? { ...msg, read_at: data.readAt, read_status: { ...msg.read_status, [data.readBy]: data.readAt } }
+          : msg
+      ));
     });
 
     socket.on('error', (error: { message: string }) => {
       console.error('Chat error:', error.message);
       setConnectionError(error.message);
     });
-  }, [email, serverUrl]);
+  }, [email, serverUrl, isOpen]);
 
   useEffect(() => {
     connectToServer();
@@ -104,11 +136,52 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   }, [connectToServer]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (shouldAutoScroll) {
+      scrollToBottom();
+    }
+  }, [messages, shouldAutoScroll]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const loadMoreMessages = async () => {
+    if (!conversationId || isLoadingHistory || !hasMoreMessages) return;
+
+    setIsLoadingHistory(true);
+    try {
+      const response = await fetch(
+        `${serverUrl}/api/conversations/${conversationId}/messages?offset=${messageOffset}&limit=10&direction=desc`
+      );
+      const data = await response.json();
+      
+      if (data.messages && data.messages.length > 0) {
+        setMessages(prev => [...data.messages, ...prev]);
+        setMessageOffset(prev => prev + data.messages.length);
+        setHasMoreMessages(data.pagination?.hasMore || false);
+      } else {
+        setHasMoreMessages(false);
+      }
+    } catch (error) {
+      console.error('Error loading more messages:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const handleScroll = () => {
+    if (messagesContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+      const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+      
+      // Auto-scroll if user is within 100px of bottom
+      setShouldAutoScroll(distanceFromBottom < 100);
+      
+      // Load more messages if user scrolls to top
+      if (scrollTop < 50 && hasMoreMessages && !isLoadingHistory) {
+        loadMoreMessages();
+      }
+    }
   };
 
   const sendMessage = () => {
@@ -133,6 +206,32 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const formatTime = (timestamp: string | Date) => {
     const date = new Date(timestamp);
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getMessageStatus = (message: Message) => {
+    if (message.sender_type === 'admin') return null; // Admin messages don't show status for user
+    
+    if (message.read_at) {
+      return 'read'; // Double blue tick
+    } else if (message.delivered_at) {
+      return 'delivered'; // Double gray tick  
+    } else {
+      return 'sent'; // Single gray tick
+    }
+  };
+
+  const MessageStatusIndicator: React.FC<{ message: Message }> = ({ message }) => {
+    const status = getMessageStatus(message);
+    
+    if (!status) return null;
+    
+    return (
+      <span className={`message-status ${status}`}>
+        {status === 'sent' && '✓'}
+        {status === 'delivered' && '✓✓'}
+        {status === 'read' && '✓✓'}
+      </span>
+    );
   };
 
   const toggleChat = () => {
@@ -188,7 +287,18 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
           )}
 
           {/* Messages */}
-          <div className="chat-messages" data-testid="chat-messages">
+          <div 
+            className="chat-messages" 
+            data-testid="chat-messages"
+            ref={messagesContainerRef}
+            onScroll={handleScroll}
+          >
+            {isLoadingHistory && (
+              <div className="loading-history">
+                <div className="loading-spinner"></div>
+                <p>Loading more messages...</p>
+              </div>
+            )}
             {messages.length === 0 ? (
               <div className="welcome-message">
                 <p>Welcome! How can we help you today?</p>
@@ -205,6 +315,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
                   </div>
                   <div className="message-time">
                     {formatTime(message.created_at)}
+                    <MessageStatusIndicator message={message} />
                   </div>
                 </div>
               ))

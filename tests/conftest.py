@@ -32,9 +32,8 @@ def setup_directories():
     for dir_path in [TEST_CONFIG["screenshot_dir"], TEST_CONFIG["reports_dir"], TEST_CONFIG["logs_dir"]]:
         os.makedirs(dir_path, exist_ok=True)
 
-@pytest.fixture
-def chrome_driver(setup_directories):
-    """Create Chrome WebDriver instance with optimized settings"""
+def _create_chrome_driver():
+    """Helper function to create Chrome WebDriver with proper ARM64 Mac support"""
     chrome_options = Options()
     chrome_options.add_argument("--headless=new")  # Use new headless mode
     chrome_options.add_argument("--no-sandbox")
@@ -49,35 +48,111 @@ def chrome_driver(setup_directories):
     chrome_options.add_argument("--enable-logging")
     chrome_options.add_argument("--v=1")
     
-    # Try system ChromeDriver first, then fallback to webdriver-manager
+    # Try multiple ChromeDriver sources for ARM64 Mac compatibility
+    chromedriver_paths = [
+        "/opt/homebrew/bin/chromedriver",  # Homebrew ARM64
+        "/usr/local/bin/chromedriver",     # Intel Homebrew
+        "/usr/bin/chromedriver",           # System install
+    ]
+    
+    # First try system-installed ChromeDriver
+    for chromedriver_path in chromedriver_paths:
+        if os.path.exists(chromedriver_path):
+            try:
+                service = Service(chromedriver_path)
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+                driver.implicitly_wait(5)
+                return driver
+            except Exception as e:
+                print(f"Failed with {chromedriver_path}: {e}")
+                continue
+    
+    # Try webdriver-manager with better error handling
     try:
-        # First try system-installed ChromeDriver
-        system_chromedriver = "/opt/homebrew/bin/chromedriver"
-        if os.path.exists(system_chromedriver):
-            service = Service(system_chromedriver)
-        else:
-            # Fallback to webdriver-manager
-            service = Service(ChromeDriverManager().install())
+        from webdriver_manager.chrome import ChromeDriverManager
+        chromedriver_path = ChromeDriverManager().install()
         
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-        driver.implicitly_wait(5)
-        
-        yield driver
-        
-        driver.quit()
-        
-    except Exception as e:
-        # Final fallback: try without service
-        print(f"ChromeDriver setup failed: {e}")
-        print("Trying fallback Chrome setup...")
-        
-        try:
-            driver = webdriver.Chrome(options=chrome_options)
+        # Verify the downloaded file is executable
+        if os.path.exists(chromedriver_path) and os.path.isfile(chromedriver_path):
+            # Make sure it's executable
+            os.chmod(chromedriver_path, 0o755)
+            
+            service = Service(chromedriver_path)
+            driver = webdriver.Chrome(service=service, options=chrome_options)
             driver.implicitly_wait(5)
-            yield driver
-            driver.quit()
-        except Exception as e2:
-            pytest.skip(f"Could not initialize Chrome WebDriver: {e2}")
+            return driver
+        else:
+            print(f"webdriver-manager downloaded invalid file: {chromedriver_path}")
+    
+    except Exception as e:
+        print(f"webdriver-manager failed: {e}")
+    
+    # Final fallback: try without service (uses system PATH)
+    try:
+        driver = webdriver.Chrome(options=chrome_options)
+        driver.implicitly_wait(5)
+        return driver
+    except Exception as e:
+        print(f"Final fallback failed: {e}")
+        raise Exception(f"Could not initialize Chrome WebDriver: {e}")
+
+@pytest.fixture
+def chrome_driver(setup_directories):
+    """Create Chrome WebDriver instance with optimized settings"""
+    try:
+        driver = _create_chrome_driver()
+        yield driver
+        driver.quit()
+    except Exception as e:
+        pytest.skip(f"Could not initialize Chrome WebDriver: {e}")
+
+@pytest.fixture
+def chrome_driver_user(setup_directories):
+    """Create Chrome WebDriver instance for user testing"""
+    try:
+        driver = _create_chrome_driver()
+        yield driver
+        driver.quit()
+    except Exception as e:
+        pytest.skip(f"Could not initialize Chrome WebDriver (user): {e}")
+
+@pytest.fixture  
+def chrome_driver_admin(setup_directories):
+    """Create Chrome WebDriver instance for admin testing"""
+    try:
+        driver = _create_chrome_driver()
+        yield driver
+        driver.quit()
+    except Exception as e:
+        pytest.skip(f"Could not initialize Chrome WebDriver (admin): {e}")
+
+@pytest.fixture
+def chrome_driver_multiple(setup_directories):
+    """Create multiple Chrome WebDriver instances for concurrent testing"""
+    drivers = []
+    try:
+        # Create 3 drivers for multi-user testing
+        for i in range(3):
+            driver = _create_chrome_driver()
+            drivers.append(driver)
+        
+        yield drivers
+        
+        # Clean up all drivers
+        for driver in drivers:
+            try:
+                driver.quit()
+            except:
+                pass
+                
+    except Exception as e:
+        # Clean up any partially created drivers
+        for driver in drivers:
+            try:
+                driver.quit()
+            except:
+                pass
+        pytest.skip(f"Could not initialize multiple Chrome WebDrivers: {e}")
 
 @pytest.fixture
 def wait(chrome_driver):
@@ -147,6 +222,12 @@ class TestUtils:
         return wait.until(EC.element_to_be_clickable((by, value)))
     
     @staticmethod
+    def wait_for_element_not_visible(driver, by, value, timeout=10):
+        """Wait for element to become not visible"""
+        wait = WebDriverWait(driver, timeout)
+        return wait.until(EC.invisibility_of_element_located((by, value)))
+    
+    @staticmethod
     def safe_click(driver, element):
         """Safely click an element with JS fallback"""
         try:
@@ -159,6 +240,19 @@ class TestUtils:
         """Wait for specific text to appear in element"""
         wait = WebDriverWait(driver, timeout)
         return wait.until(EC.text_to_be_present_in_element((by, value), text))
+    
+    @staticmethod
+    def scroll_to_element(driver, element):
+        """Scroll element into view"""
+        driver.execute_script("arguments[0].scrollIntoView(true);", element)
+    
+    @staticmethod
+    def wait_for_page_ready(driver, timeout=10):
+        """Wait for page to be ready (DOM loaded and JS executed)"""
+        wait = WebDriverWait(driver, timeout)
+        return wait.until(
+            lambda d: d.execute_script("return document.readyState") == "complete"
+        )
 
 @pytest.fixture
 def utils():

@@ -52,11 +52,91 @@ app.get('/api/conversations', async (req, res) => {
 app.get('/api/conversations/:id/messages', async (req, res) => {
   try {
     const { id } = req.params;
-    const messages = await db.getMessages(id);
-    res.json(messages);
+    const { offset = 0, limit = 10, direction = 'desc' } = req.query;
+    
+    // Use pagination if query params provided, otherwise use legacy method
+    if (req.query.offset !== undefined || req.query.limit !== undefined) {
+      const messages = await db.getMessagesWithPagination(
+        id, 
+        parseInt(offset as string), 
+        parseInt(limit as string),
+        direction as 'asc' | 'desc'
+      );
+      const totalCount = await db.getMessageCount(id);
+      res.json({
+        messages,
+        pagination: {
+          offset: parseInt(offset as string),
+          limit: parseInt(limit as string),
+          total: totalCount,
+          hasMore: (parseInt(offset as string) + parseInt(limit as string)) < totalCount
+        }
+      });
+    } else {
+      // Legacy endpoint behavior
+      const messages = await db.getMessages(id);
+      res.json(messages);
+    }
   } catch (error) {
     console.error('Error fetching messages:', error);
     res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
+// Get unread messages for admin notifications
+app.get('/api/unread-messages', async (req, res) => {
+  try {
+    const { limit = 10, userEmail } = req.query;
+    const unreadMessages = await db.getUnreadMessages(
+      userEmail as string, 
+      parseInt(limit as string)
+    );
+    res.json(unreadMessages);
+  } catch (error) {
+    console.error('Error fetching unread messages:', error);
+    res.status(500).json({ error: 'Failed to fetch unread messages' });
+  }
+});
+
+// Mark message as read
+app.post('/api/messages/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { readBy = 'admin' } = req.body;
+    const updatedMessage = await db.markMessageAsRead(id, readBy);
+    
+    // Emit read status update to relevant clients
+    io.emit('message-read', {
+      messageId: id,
+      readBy,
+      readAt: updatedMessage.read_at
+    });
+    
+    res.json({ success: true, message: updatedMessage });
+  } catch (error) {
+    console.error('Error marking message as read:', error);
+    res.status(500).json({ error: 'Failed to mark message as read' });
+  }
+});
+
+// Mark conversation as read
+app.post('/api/conversations/:id/read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { readBy = 'admin' } = req.body;
+    const updatedCount = await db.markConversationAsRead(id, readBy);
+    
+    // Emit conversation read status update
+    io.emit('conversation-read', {
+      conversationId: id,
+      readBy,
+      updatedCount
+    });
+    
+    res.json({ success: true, updatedCount });
+  } catch (error) {
+    console.error('Error marking conversation as read:', error);
+    res.status(500).json({ error: 'Failed to mark conversation as read' });
   }
 });
 
@@ -290,6 +370,48 @@ io.on('connection', (socket) => {
   socket.on('admin-stopped-typing', (data: { conversationId: string }) => {
     // Notify users in conversation that admin stopped typing
     socket.to(`conversation-${data.conversationId}`).emit('admin-stopped-typing');
+  });
+
+  // Handle message read status
+  socket.on('mark-conversation-read', async (data: { conversationId: string }) => {
+    try {
+      const readBy = adminConnections.has(socket.id) ? 'admin' : 'user';
+      await db.markConversationAsRead(data.conversationId, readBy);
+      
+      // Emit read status to all clients in the conversation
+      io.to(`conversation-${data.conversationId}`).emit('conversation-read', {
+        conversationId: data.conversationId,
+        readBy,
+        readAt: new Date()
+      });
+      
+      // Notify admins about read status update
+      adminConnections.forEach(adminSocketId => {
+        io.to(adminSocketId).emit('conversation-read', {
+          conversationId: data.conversationId,
+          readBy,
+          readAt: new Date()
+        });
+      });
+    } catch (error) {
+      console.error('Error marking conversation as read:', error);
+    }
+  });
+
+  socket.on('mark-message-read', async (data: { messageId: string }) => {
+    try {
+      const readBy = adminConnections.has(socket.id) ? 'admin' : 'user';
+      const updatedMessage = await db.markMessageAsRead(data.messageId, readBy);
+      
+      // Emit read status to relevant clients
+      io.emit('message-read', {
+        messageId: data.messageId,
+        readBy,
+        readAt: updatedMessage.read_at
+      });
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+    }
   });
 
   // Handle disconnection
