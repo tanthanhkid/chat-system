@@ -30,7 +30,7 @@ const vietnameseTexts = {
  retry: 'Thử lại',
  broadcastMessage: 'Tin nhắn Phát sóng',
  broadcastPlaceholder: 'Gửi tin nhắn đến tất cả người dùng...',
- broadcast: 'Phát sóng',
+ broadcast: 'Gửi tất cả',
  conversations: 'Cuộc trò chuyện',
  online: 'Trực tuyến',
  offline: 'Ngoại tuyến',
