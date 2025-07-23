@@ -38,8 +38,9 @@ CREATE TABLE messages (
 CREATE INDEX idx_conversations_user_email ON conversations(user_email);
 CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
 CREATE INDEX idx_messages_created_at ON messages(created_at);
-CREATE INDEX idx_messages_delivered_at ON messages(delivered_at);
-CREATE INDEX idx_messages_read_at ON messages(read_at);
+-- Partial indexes for nullable timestamp columns (more efficient)
+CREATE INDEX idx_messages_delivered_at ON messages(delivered_at) WHERE delivered_at IS NOT NULL;
+CREATE INDEX idx_messages_read_at ON messages(read_at) WHERE read_at IS NOT NULL;
 
 -- Function to update updated_at timestamp with timezone awareness
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -56,7 +57,6 @@ CREATE TRIGGER update_conversations_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Add timezone-aware indexes for timestamp queries
-CREATE INDEX idx_messages_created_at ON messages(created_at);
-CREATE INDEX idx_messages_delivered_at ON messages(delivered_at) WHERE delivered_at IS NOT NULL;
-CREATE INDEX idx_messages_read_at ON messages(read_at) WHERE read_at IS NOT NULL;
+-- Additional composite indexes for common queries
+CREATE INDEX idx_messages_conversation_sender ON messages(conversation_id, sender_type);
+CREATE INDEX idx_messages_read_status ON messages(conversation_id, read_at) WHERE read_at IS NOT NULL;

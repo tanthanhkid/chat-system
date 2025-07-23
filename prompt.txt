@@ -1,11 +1,10 @@
 
-chỉnh sửa:  
-- ở cả chat widget và admin interface chat windows đều chỉ load 5 tin nhắn mới nhất. khi scroll lên trên thì sẽ thấy nút tải message cũ, khi click thì tải thêm 10 tin cũ, 
-nếu còn thì hiển thị nút đó để click tiếp nếu user cần, nếu hết tin nhắn rồi thì thông báo không còn tin nhắn cũ.
-- ở cả chat widget và admin interface chat windows bên dưới tin nhắn gửi đi thì có hiển thị trang thái đã xem hay chưa để người gửi biết người đọc đã xem.
+Prompt 1: ở cả chat widget và admin interface chat windows bên dưới tin nhắn gửi đi thì có hiển thị trang thái đã xem hay chưa để người gửi biết người đọc đã xem.
 
-Giao diện nâng cấp:
-- Sử dụng shadcn cho admin interface
+Prompt 2:
+- Sử dụng shadcn cho admin interface để áp dụng được cho theme bên dưới.
+- sử dụng shadcn theme: npx shadcn@latest add https://tweakcn.com/r/themes/northern-lights.json 
+
 
 Hãy fix lỗi trước sau đó dùng selenium viết automation test cho các chức năng này, test và fix đến khi nào hết lỗi thì mới được phép dừng, think hard.
 nếu cần sửa database thì xoá docker container cũ và chạy docker compose để khởi tạo lại từ init.sql script

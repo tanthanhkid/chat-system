@@ -9,8 +9,18 @@
   right: 20px;
 }
 
+.chat-widget-right .chat-toggle-btn {
+  right: 20px;
+  bottom: 20px;
+}
+
 .chat-widget-left {
   left: 20px;
+}
+
+.chat-widget-left .chat-toggle-btn {
+  left: 20px;
+  bottom: 20px;
 }
 
 .chat-toggle-btn {
@@ -23,10 +33,11 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
-  position: relative;
+  position: fixed;
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 10000;
 }
 
 .chat-toggle-btn:hover {
@@ -122,8 +133,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%);
-  backdrop-filter: blur(10px);
+  background: hsl(222.2, 47.4%, 11.2%);
 }
 
 .chat-header h3 {
@@ -326,7 +336,55 @@
   100% { transform: rotate(360deg); }
 }
 
-/* Message Status Indicators */
+/* Load More Button */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.load-more-button {
+  background: var(--primary-color, #007bff);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+.load-more-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+.load-more-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.2);
+}
+
+.no-more-messages {
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.no-more-messages p {
+  margin: 0;
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+/* Enhanced Message Status Indicators - Northern Lights Style */
 .message-time {
   display: flex;
   align-items: center;
@@ -341,18 +399,65 @@
 .message-status {
   font-size: 11px;
   line-height: 1;
+  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s ease-in-out, opacity 0.2s ease-in-out, transform 0.15s ease-in-out;
+  user-select: none;
+  cursor: default;
 }
 
 .message-status.sent {
   color: #9ca3af;
+  opacity: 0.7;
 }
 
 .message-status.delivered {
   color: #6b7280;
+  opacity: 0.8;
 }
 
 .message-status.read {
   color: var(--primary-color, #007bff);
+  opacity: 1;
+}
+
+/* Hover effects for status indicators */
+.message-status:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  transition: all 0.15s ease-in-out;
+}
+
+/* Mobile-first responsive adjustments for message status */
+@media (max-width: 640px) {
+  .message-status {
+    font-size: 10px;
+    margin-left: 3px;
+  }
+}
+
+@media (min-width: 768px) {
+  .message-status {
+    font-size: 12px;
+    margin-left: 6px;
+  }
+}
+
+/* Northern Lights theme colors for widget */
+.message-status.sent {
+  color: #9ca3af;
+  opacity: 0.7;
+}
+
+.message-status.delivered {
+  color: #6b7280;
+  opacity: 0.8;
+}
+
+.message-status.read {
+  color: #007bff;
+  opacity: 1;
 }
 
 .connection-error {
@@ -388,14 +493,32 @@
 
 @media (max-width: 480px) {
   .chat-window {
-    width: calc(100vw - 40px);
+    width: calc(100vw - 20px);
+    max-width: none;
     height: calc(100vh - 140px);
     bottom: 80px;
-    right: 20px;
-    left: 20px;
+    right: 10px;
+    left: 10px;
+    position: fixed;
   }
   
   .chat-widget-left .chat-window {
-    left: 20px;
+    left: 10px;
+    right: 10px;
+  }
+}
+
+/* Enhanced mobile responsiveness for smaller screens */
+@media (max-width: 600px) {
+  .chat-window {
+    width: calc(100vw - 30px);
+    min-width: 85vw; /* Ensure minimum 85% viewport width */
+    right: 15px;
+    left: 15px;
+  }
+  
+  .chat-widget-left .chat-window {
+    left: 15px;
+    right: 15px;
   }
 }

@@ -14,7 +14,12 @@ const vietnameseTexts = {
   reconnecting: 'Đang kết nối lại...',
   connectionError: 'Lỗi kết nối',
   retryConnection: 'Thử lại kết nối',
-  loadingMessages: 'Đang tải thêm tin nhắn...'
+  loadingMessages: 'Đang tải thêm tin nhắn...',
+  loadMoreMessages: 'Tải thêm tin nhắn cũ',
+  noMoreMessages: 'Không còn tin nhắn cũ',
+  statusSent: 'Đã gửi',
+  statusDelivered: 'Đã nhận',
+  statusRead: 'Đã xem'
 };
 
 export const ChatWidget: React.FC<ChatWidgetProps> = ({
@@ -130,7 +135,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       }
     });
 
-    socket.on('new-message', (message: Message) => {
+    socket.on('message-received', (message: Message) => {
       setMessages(prev => [...prev, message]);
       
       // Handle admin messages
@@ -253,10 +258,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       // Auto-scroll if user is within 150px of bottom (increased threshold for better UX)
       setShouldAutoScroll(distanceFromBottom < 150);
       
-      // Load more messages if user scrolls to top
-      if (scrollTop < 50 && hasMoreMessages && !isLoadingHistory) {
-        loadMoreMessages();
-      }
+      // Note: Removed automatic scroll-to-load. Users now click "Load More" button instead
     }
   };
 
@@ -308,12 +310,74 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     
     if (!status) return null;
     
+    const getStatusTooltip = (status: string) => {
+      switch (status) {
+        case 'sent': return vietnameseTexts.statusSent || 'Đã gửi';
+        case 'delivered': return vietnameseTexts.statusDelivered || 'Đã nhận';
+        case 'read': return vietnameseTexts.statusRead || 'Đã xem';
+        default: return '';
+      }
+    };
+    
+    const getStatusIcon = (status: string) => {
+      switch (status) {
+        case 'sent':
+          return (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20,6 9,17 4,12" />
+            </svg>
+          );
+        case 'delivered':
+          return (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20,6 9,17 4,12" />
+              <polyline points="24,6 13,17 8,12" strokeOpacity="0.6" />
+            </svg>
+          );
+        case 'read':
+          return (
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="20,6 9,17 4,12" />
+              <polyline points="24,6 13,17 8,12" />
+            </svg>
+          );
+        default:
+          return null;
+      }
+    };
+    
     return (
-      <span className={`message-status ${status}`}>
-        {status === 'sent' && '✓'}
-        {status === 'delivered' && '✓✓'}
-        {status === 'read' && '✓✓'}
+      <span 
+        className={`message-status ${status}`}
+        title={getStatusTooltip(status)}
+      >
+        {getStatusIcon(status)}
       </span>
+    );
+  };
+
+  const LoadMoreButton: React.FC = () => {
+    if (!hasMoreMessages && messages.length > 0) {
+      return (
+        <div className="no-more-messages" data-testid="no-more-messages">
+          <p>{vietnameseTexts.noMoreMessages}</p>
+        </div>
+      );
+    }
+
+    if (!hasMoreMessages) return null;
+
+    return (
+      <div className="load-more-container" data-testid="load-more-container">
+        <button 
+          className="load-more-button" 
+          onClick={loadMoreMessages}
+          disabled={isLoadingHistory}
+          data-testid="load-more-button"
+        >
+          {isLoadingHistory ? vietnameseTexts.loadingMessages : vietnameseTexts.loadMoreMessages}
+        </button>
+      </div>
     );
   };
 
@@ -398,12 +462,9 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             ref={messagesContainerRef}
             onScroll={handleScroll}
           >
-            {isLoadingHistory && (
-              <div className="loading-history">
-                <div className="loading-spinner"></div>
-                <p>{vietnameseTexts.loadingMessages}</p>
-              </div>
-            )}
+            {/* Load More Button at the top */}
+            <LoadMoreButton />
+            
             {messages.length === 0 ? (
               <div className="welcome-message">
                 <p>{vietnameseTexts.welcome}</p>

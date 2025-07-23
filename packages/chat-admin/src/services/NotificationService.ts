@@ -211,13 +211,8 @@ class NotificationService {
         body: data.body,
         icon: data.icon || '/favicon.ico',
         badge: data.badge || '/favicon.ico',
-        image: data.image,
         data: data.data,
-        actions: data.actions,
-        vibrate: [200, 100, 200],
-        requireInteraction: true,
-        tag: data.data?.conversationId || 'default',
-        renotify: true
+        tag: data.data?.conversationId || 'default'
       });
     } else {
       // Fallback to basic notification

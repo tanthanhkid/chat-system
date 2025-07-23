@@ -5,15 +5,48 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import webpush from 'web-push';
 import { db } from './database';
+import { validate, validationSchemas, validateSocketData, sanitize, checkRateLimit } from './validation';
+import { authenticateAdmin, requireAuth, requireAdmin, AuthenticatedRequest } from './auth';
+import { healthCheck, readinessCheck, livenessCheck } from './health';
 
 dotenv.config();
 
 const app = express();
 const server = createServer(app);
+// CORS configuration with environment-based allowed origins
+const allowedOrigins = process.env.CORS_ORIGIN 
+  ? process.env.CORS_ORIGIN.split(',').map(origin => origin.trim())
+  : [
+      'http://localhost:3000',  // Admin interface
+      'http://localhost:5500',  // Test server
+      'http://localhost:5173',  // Widget dev server
+      'https://your-production-domain.com'  // Production domain
+    ];
+
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (mobile apps, server-to-server, etc.)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`CORS blocked request from origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'), false);
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-requested-with'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true
   },
   pingTimeout: 60000,
   pingInterval: 25000,
@@ -21,8 +54,8 @@ const io = new Server(server, {
   allowEIO3: true
 });
 
-app.use(cors());
-app.use(express.json());
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' })); // Add payload size limit
 
 const PORT = process.env.PORT || 3001;
 
@@ -38,8 +71,39 @@ webpush.setVapidDetails(
   'Ry2zi3_jRr5cktypiztT2YuQ3sM6e_1mr6QOIL7SAAw' // Private Key - Should be from environment
 );
 
-// REST API Routes
-app.get('/api/conversations', async (req, res) => {
+// Authentication Routes
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password required' });
+    }
+    
+    const auth = await authenticateAdmin(username, password);
+    if (!auth) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+    
+    res.json({ token: auth.token, message: 'Login successful' });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/auth/verify', requireAuth, (req: AuthenticatedRequest, res) => {
+  res.json({ 
+    valid: true, 
+    user: {
+      username: req.user!.username,
+      role: req.user!.role
+    }
+  });
+});
+
+// Protected admin routes
+app.get('/api/conversations', requireAuth, requireAdmin, async (req, res) => {
   try {
     const conversations = await db.getAllConversations();
     res.json(conversations);
@@ -49,32 +113,41 @@ app.get('/api/conversations', async (req, res) => {
   }
 });
 
-app.get('/api/conversations/:id/messages', async (req, res) => {
+app.get('/api/conversations/:id/messages', requireAuth, requireAdmin, validate(validationSchemas.getMessages), async (req, res) => {
   try {
     const { id } = req.params;
-    const { offset = 0, limit = 10, direction = 'desc' } = req.query;
+    const { offset, limit, direction } = req.query as any;
+    
+    // Check rate limiting
+    const clientId = req.ip || 'unknown';
+    if (!checkRateLimit(`messages:${clientId}`, 200, 15 * 60 * 1000)) {
+      return res.status(429).json({ 
+        error: 'Rate limit exceeded',
+        message: 'Too many message requests. Please try again later.'
+      });
+    }
     
     // Use pagination if query params provided, otherwise use legacy method
     if (req.query.offset !== undefined || req.query.limit !== undefined) {
       const messages = await db.getMessagesWithPagination(
-        id, 
-        parseInt(offset as string), 
-        parseInt(limit as string),
-        direction as 'asc' | 'desc'
+        sanitize.uuid(id), 
+        offset, 
+        limit,
+        direction
       );
-      const totalCount = await db.getMessageCount(id);
+      const totalCount = await db.getMessageCount(sanitize.uuid(id));
       res.json({
         messages,
         pagination: {
-          offset: parseInt(offset as string),
-          limit: parseInt(limit as string),
+          offset,
+          limit,
           total: totalCount,
-          hasMore: (parseInt(offset as string) + parseInt(limit as string)) < totalCount
+          hasMore: (offset + limit) < totalCount
         }
       });
     } else {
       // Legacy endpoint behavior
-      const messages = await db.getMessages(id);
+      const messages = await db.getMessages(sanitize.uuid(id));
       res.json(messages);
     }
   } catch (error) {
@@ -84,12 +157,22 @@ app.get('/api/conversations/:id/messages', async (req, res) => {
 });
 
 // Get unread messages for admin notifications
-app.get('/api/unread-messages', async (req, res) => {
+app.get('/api/unread-messages', validate(validationSchemas.getUnreadMessages), async (req, res) => {
   try {
-    const { limit = 10, userEmail } = req.query;
+    const { limit, userEmail } = req.query as any;
+    
+    // Check rate limiting
+    const clientId = req.ip || 'unknown';
+    if (!checkRateLimit(`unread:${clientId}`, 100, 15 * 60 * 1000)) {
+      return res.status(429).json({ 
+        error: 'Rate limit exceeded',
+        message: 'Too many unread message requests. Please try again later.'
+      });
+    }
+    
     const unreadMessages = await db.getUnreadMessages(
-      userEmail as string, 
-      parseInt(limit as string)
+      userEmail ? sanitize.email(userEmail) : undefined, 
+      limit
     );
     res.json(unreadMessages);
   } catch (error) {
@@ -99,15 +182,25 @@ app.get('/api/unread-messages', async (req, res) => {
 });
 
 // Mark message as read
-app.post('/api/messages/:id/read', async (req, res) => {
+app.post('/api/messages/:id/read', requireAuth, requireAdmin, validate(validationSchemas.markMessageRead), async (req, res) => {
   try {
     const { id } = req.params;
-    const { readBy = 'admin' } = req.body;
-    const updatedMessage = await db.markMessageAsRead(id, readBy);
+    const { readBy } = req.body as { readBy: string };
+    
+    // Check rate limiting
+    const clientId = req.ip || 'unknown';
+    if (!checkRateLimit(`read:${clientId}`, 500, 15 * 60 * 1000)) {
+      return res.status(429).json({ 
+        error: 'Rate limit exceeded',
+        message: 'Too many read requests. Please try again later.'
+      });
+    }
+    
+    const updatedMessage = await db.markMessageAsRead(sanitize.uuid(id), readBy);
     
     // Emit read status update to relevant clients
     io.emit('message-read', {
-      messageId: id,
+      messageId: sanitize.uuid(id),
       readBy,
       readAt: updatedMessage.read_at
     });
@@ -120,15 +213,25 @@ app.post('/api/messages/:id/read', async (req, res) => {
 });
 
 // Mark conversation as read
-app.post('/api/conversations/:id/read', async (req, res) => {
+app.post('/api/conversations/:id/read', requireAuth, requireAdmin, validate(validationSchemas.markConversationRead), async (req, res) => {
   try {
     const { id } = req.params;
-    const { readBy = 'admin' } = req.body;
-    const updatedCount = await db.markConversationAsRead(id, readBy);
+    const { readBy } = req.body as { readBy: string };
+    
+    // Check rate limiting
+    const clientId = req.ip || 'unknown';
+    if (!checkRateLimit(`read:${clientId}`, 500, 15 * 60 * 1000)) {
+      return res.status(429).json({ 
+        error: 'Rate limit exceeded',
+        message: 'Too many read requests. Please try again later.'
+      });
+    }
+    
+    const updatedCount = await db.markConversationAsRead(sanitize.uuid(id), readBy);
     
     // Emit conversation read status update
     io.emit('conversation-read', {
-      conversationId: id,
+      conversationId: sanitize.uuid(id),
       readBy,
       updatedCount
     });
@@ -141,9 +244,19 @@ app.post('/api/conversations/:id/read', async (req, res) => {
 });
 
 // Push notification subscription endpoint
-app.post('/api/admin/push/subscribe', (req, res) => {
+app.post('/api/admin/push/subscribe', requireAuth, requireAdmin, validate(validationSchemas.pushSubscribe), (req, res) => {
   try {
     const subscription = req.body;
+    
+    // Check rate limiting
+    const clientId = req.ip || 'unknown';
+    if (!checkRateLimit(`push-subscribe:${clientId}`, 10, 15 * 60 * 1000)) {
+      return res.status(429).json({ 
+        error: 'Rate limit exceeded',
+        message: 'Too many subscription requests. Please try again later.'
+      });
+    }
+    
     console.log('Admin subscribed to push notifications:', subscription.endpoint);
     
     // Store subscription (in production, save to database)
@@ -170,15 +283,24 @@ const sendPushNotification = async (subscription: any, payload: any) => {
 };
 
 // Test push notification endpoint
-app.post('/api/admin/test-push', async (req, res) => {
+app.post('/api/admin/test-push', requireAuth, requireAdmin, validate(validationSchemas.testPush), async (req, res) => {
   try {
-    const { title, body, data } = req.body;
+    const { title, body, data } = req.body as { title: string; body: string; data: any };
+    
+    // Check rate limiting
+    const clientId = req.ip || 'unknown';
+    if (!checkRateLimit(`test-push:${clientId}`, 5, 15 * 60 * 1000)) {
+      return res.status(429).json({ 
+        error: 'Rate limit exceeded',
+        message: 'Too many test push requests. Please try again later.'
+      });
+    }
     
     const payload = {
-      title: title || 'Test Notification',
-      body: body || 'This is a test push notification',
+      title: sanitize.content(title),
+      body: sanitize.content(body),
       icon: '/favicon.ico',
-      data: data || { test: true }
+      data: data
     };
     
     // Send to all subscribed admins
@@ -210,11 +332,19 @@ io.on('connection', (socket) => {
   // User joins chat
   socket.on('join-user', async (data: { email: string }) => {
     try {
+      // Validate input data
+      const validation = validateSocketData(validationSchemas.socketEvents.joinUser, data);
+      if (!validation.isValid) {
+        console.warn(`❌ Invalid join-user data from ${socket.id}:`, validation.error);
+        socket.emit('error', { message: `Invalid data: ${validation.error}` });
+        return;
+      }
+      
       console.log('Received join-user event:', data);
-      const { email } = data;
+      const { email } = validation.value;
       
       // Create user if doesn't exist
-      await db.createUser(email);
+      await db.createUser(sanitize.email(email));
       
       // Get or create conversation
       const conversation = await db.getOrCreateConversation(email);
@@ -259,21 +389,34 @@ io.on('connection', (socket) => {
   // User sends message
   socket.on('user-message', async (data: { conversationId: string, content: string, email: string }) => {
     try {
-      console.log('Received user-message:', { email: data.email, conversationId: data.conversationId, content: data.content.substring(0, 50) + '...' });
-      const { conversationId, content, email } = data;
+      // Validate input data
+      const validation = validateSocketData(validationSchemas.socketEvents.userMessage, data);
+      if (!validation.isValid) {
+        console.warn(`❌ Invalid user-message data from ${socket.id}:`, validation.error);
+        socket.emit('error', { message: `Invalid message data: ${validation.error}` });
+        return;
+      }
       
-      // Save message to database
-      const message = await db.saveMessage(conversationId, 'user', content);
+      const { conversationId, content, email } = validation.value;
+      console.log('Received user-message:', { email, conversationId, content: content.substring(0, 50) + '...' });
       
-      // Broadcast to conversation room
-      io.to(`conversation-${conversationId}`).emit('new-message', message);
+      // Save message to database with sanitized content
+      const message = await db.saveMessage(
+        sanitize.uuid(conversationId), 
+        'user', 
+        sanitize.content(content)
+      );
       
-      // Notify all admins via Socket.IO
+      // Broadcast to conversation room (widget)
+      io.to(`conversation-${conversationId}`).emit('message-received', message);
+      
+      // Notify all admins via Socket.IO with consistent event name
       console.log('Notifying', adminConnections.size, 'admins about new user message');
       adminConnections.forEach(adminSocketId => {
         io.to(adminSocketId).emit('new-user-message', {
           ...message,
-          userEmail: email
+          userEmail: email,
+          messageType: 'user-message'
         });
       });
       
@@ -308,13 +451,16 @@ io.on('connection', (socket) => {
       // Save message to database
       const message = await db.saveMessage(conversationId, 'admin', content);
       
-      // Broadcast to conversation room
-      io.to(`conversation-${conversationId}`).emit('new-message', message);
+      // Broadcast to conversation room (widget) with consistent event name
+      io.to(`conversation-${conversationId}`).emit('message-received', message);
       
-      // Notify other admins
+      // Notify other admins with consistent event name
       adminConnections.forEach(adminSocketId => {
         if (adminSocketId !== socket.id) {
-          io.to(adminSocketId).emit('new-admin-message', message);
+          io.to(adminSocketId).emit('new-admin-message', {
+            ...message,
+            messageType: 'admin-message'
+          });
         }
       });
       
@@ -334,7 +480,7 @@ io.on('connection', (socket) => {
       
       for (const conversation of conversations) {
         const message = await db.saveMessage(conversation.id, 'admin', content);
-        io.to(`conversation-${conversation.id}`).emit('new-message', message);
+        io.to(`conversation-${conversation.id}`).emit('message-received', message);
       }
       
       // Notify all admins about the broadcast
@@ -442,6 +588,12 @@ io.on('connection', (socket) => {
   });
 });
 
+// Health check endpoints
+app.get('/health', healthCheck);
+app.get('/health/ready', readinessCheck);
+app.get('/health/live', livenessCheck);
+
 server.listen(PORT, () => {
   console.log(`Chat server running on port ${PORT}`);
+  console.log(`Health check available at http://localhost:${PORT}/health`);
 });

@@ -58,7 +58,7 @@ class Database {
         const result = await pool.query(query, [conversationId, senderType, content]);
         return result.rows[0];
     }
-    async getMessages(conversationId, limit = 20) {
+    async getMessages(conversationId, limit = 5) {
         console.log(`🔍 [DEBUG] getMessages called for conversation: ${conversationId}, limit: ${limit}`);
         // Use same logic as getMessagesWithPagination for consistency
         return this.getMessagesWithPagination(conversationId, 0, limit, 'asc');
