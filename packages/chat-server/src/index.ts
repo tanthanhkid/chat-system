@@ -225,8 +225,14 @@ io.on('connection', (socket) => {
       userConnections.set(email, socket.id);
       
       // Send conversation info and message history
-      const messages = await db.getMessages(conversation.id);
+      // Load only 5 most recent messages initially, user can scroll to load more
+      const messages = await db.getMessagesWithPagination(conversation.id, 0, 5, 'desc');
       console.log('Sending conversation-joined event with', messages.length, 'messages');
+      console.log(`🔍 [DEBUG] Messages for ${email} (conversation ${conversation.id}):`);
+      messages.slice(0, 3).forEach((msg, index) => {
+        console.log(`  ${index + 1}. [${msg.sender_type}] ${msg.content.substring(0, 30)}... at ${msg.created_at}`);
+      });
+      
       socket.emit('conversation-joined', {
         conversationId: conversation.id,
         messages

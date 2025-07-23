@@ -1,31 +1,36 @@
--- Chat System Database Schema
+-- Chat System Database Schema with Timezone Awareness
+
+-- Set timezone to UTC explicitly for consistent timestamps
+SET timezone TO 'UTC';
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Users table
+-- Users table with timezone-aware timestamps
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Conversations table
+-- Conversations table with timezone-aware timestamps
 CREATE TABLE conversations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_email VARCHAR(255) NOT NULL REFERENCES users(email),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    -- Add unique constraint to prevent multiple conversations per user
+    CONSTRAINT conversations_user_email_unique UNIQUE (user_email)
 );
 
--- Messages table
+-- Messages table with timezone-aware timestamps
 CREATE TABLE messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
     sender_type VARCHAR(10) NOT NULL CHECK (sender_type IN ('user', 'admin')),
     content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    delivered_at TIMESTAMP,
-    read_at TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    delivered_at TIMESTAMP WITH TIME ZONE,
+    read_at TIMESTAMP WITH TIME ZONE,
     read_status JSONB DEFAULT '{}'::jsonb
 );
 
@@ -36,11 +41,11 @@ CREATE INDEX idx_messages_created_at ON messages(created_at);
 CREATE INDEX idx_messages_delivered_at ON messages(delivered_at);
 CREATE INDEX idx_messages_read_at ON messages(read_at);
 
--- Function to update updated_at timestamp
+-- Function to update updated_at timestamp with timezone awareness
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
+    NEW.updated_at = CURRENT_TIMESTAMP AT TIME ZONE 'UTC';
     RETURN NEW;
 END;
 $$ language 'plpgsql';
@@ -50,3 +55,8 @@ CREATE TRIGGER update_conversations_updated_at
     BEFORE UPDATE ON conversations
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Add timezone-aware indexes for timestamp queries
+CREATE INDEX idx_messages_created_at ON messages(created_at);
+CREATE INDEX idx_messages_delivered_at ON messages(delivered_at) WHERE delivered_at IS NOT NULL;
+CREATE INDEX idx_messages_read_at ON messages(read_at) WHERE read_at IS NOT NULL;

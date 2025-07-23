@@ -8,12 +8,17 @@ services:
       POSTGRES_DB: chat_system
       POSTGRES_USER: chat_user
       POSTGRES_PASSWORD: chat_password
+      # Set timezone to UTC for consistent timestamp handling
+      TZ: UTC
+      PGTZ: UTC
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
+    # Ensure container uses UTC timezone
+    command: postgres -c timezone=UTC
 
 volumes:
   postgres_data:

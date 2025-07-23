@@ -48,40 +48,48 @@ export class Database {
   }
 
   async getOrCreateConversation(userEmail: string): Promise<Conversation> {
+    console.log(`🔍 [DEBUG] getOrCreateConversation called for: ${userEmail}`);
+    
     let query = 'SELECT * FROM conversations WHERE user_email = $1';
     let result = await pool.query(query, [userEmail]);
     
+    console.log(`🔍 [DEBUG] Found ${result.rows.length} existing conversations for ${userEmail}`);
+    
     if (result.rows.length === 0) {
+      console.log(`🔍 [DEBUG] Creating new conversation for ${userEmail}`);
       query = `
         INSERT INTO conversations (user_email) 
         VALUES ($1) 
         RETURNING *
       `;
       result = await pool.query(query, [userEmail]);
+      console.log(`🔍 [DEBUG] Created conversation ${result.rows[0].id} for ${userEmail}`);
+    } else {
+      console.log(`🔍 [DEBUG] Using existing conversation ${result.rows[0].id} for ${userEmail}`);
     }
     
-    return result.rows[0];
+    const conversation = result.rows[0];
+    console.log(`🔍 [DEBUG] Returning conversation: ID=${conversation.id}, User=${conversation.user_email}`);
+    return conversation;
   }
 
   async saveMessage(conversationId: string, senderType: 'user' | 'admin', content: string): Promise<Message> {
     const query = `
       INSERT INTO messages (conversation_id, sender_type, content, delivered_at)
-      VALUES ($1, $2, $3, NOW())
-      RETURNING *
+      VALUES ($1, $2, $3, CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+      RETURNING *,
+        created_at AT TIME ZONE 'UTC' as created_at_utc,
+        delivered_at AT TIME ZONE 'UTC' as delivered_at_utc
     `;
     const result = await pool.query(query, [conversationId, senderType, content]);
     return result.rows[0];
   }
 
-  async getMessages(conversationId: string, limit: number = 50): Promise<Message[]> {
-    const query = `
-      SELECT * FROM messages 
-      WHERE conversation_id = $1 
-      ORDER BY created_at ASC 
-      LIMIT $2
-    `;
-    const result = await pool.query(query, [conversationId, limit]);
-    return result.rows;
+  async getMessages(conversationId: string, limit: number = 5): Promise<Message[]> {
+    console.log(`🔍 [DEBUG] getMessages called for conversation: ${conversationId}, limit: ${limit}`);
+    
+    // Use same logic as getMessagesWithPagination for consistency
+    return this.getMessagesWithPagination(conversationId, 0, limit, 'asc');
   }
 
   async getMessagesWithPagination(
@@ -90,14 +98,35 @@ export class Database {
     limit: number = 10, 
     direction: 'asc' | 'desc' = 'desc'
   ): Promise<Message[]> {
+    console.log(`🔍 [DEBUG] getMessagesWithPagination: conv=${conversationId}, offset=${offset}, limit=${limit}, direction=${direction}`);
+    
     const query = `
-      SELECT * FROM messages 
+      SELECT *,
+        created_at AT TIME ZONE 'UTC' as created_at_utc,
+        delivered_at AT TIME ZONE 'UTC' as delivered_at_utc,
+        read_at AT TIME ZONE 'UTC' as read_at_utc
+      FROM messages 
       WHERE conversation_id = $1 
       ORDER BY created_at ${direction.toUpperCase()} 
       LIMIT $2 OFFSET $3
     `;
     const result = await pool.query(query, [conversationId, limit, offset]);
-    return direction === 'desc' ? result.rows.reverse() : result.rows;
+    
+    console.log(`🔍 [DEBUG] Found ${result.rows.length} messages for conversation ${conversationId}`);
+    
+    // For DESC queries, reverse to get chronological order (oldest first)
+    const messages = direction === 'desc' ? result.rows.reverse() : result.rows;
+    
+    // Validate all messages belong to the correct conversation
+    const wrongConvMessages = messages.filter(msg => msg.conversation_id !== conversationId);
+    if (wrongConvMessages.length > 0) {
+      console.log(`🚨 [BUG FOUND] ${wrongConvMessages.length} messages have wrong conversation_id!`);
+      wrongConvMessages.forEach(msg => {
+        console.log(`  - Message ${msg.id} has conv_id ${msg.conversation_id} (should be ${conversationId})`);
+      });
+    }
+    
+    return messages;
   }
 
   async getUnreadMessages(userEmail?: string, limit: number = 10): Promise<(Message & { user_email?: string })[]> {
@@ -122,27 +151,32 @@ export class Database {
   }
 
   async markMessageAsRead(messageId: string, readBy: string): Promise<Message> {
+    const readTimestamp = new Date().toISOString();
     const query = `
       UPDATE messages 
-      SET read_at = NOW(), 
+      SET read_at = CURRENT_TIMESTAMP AT TIME ZONE 'UTC', 
           read_status = read_status || $2::jsonb
       WHERE id = $1
-      RETURNING *
+      RETURNING *,
+        created_at AT TIME ZONE 'UTC' as created_at_utc,
+        delivered_at AT TIME ZONE 'UTC' as delivered_at_utc,
+        read_at AT TIME ZONE 'UTC' as read_at_utc
     `;
-    const readStatus = JSON.stringify({ [readBy]: new Date().toISOString() });
+    const readStatus = JSON.stringify({ [readBy]: readTimestamp });
     const result = await pool.query(query, [messageId, readStatus]);
     return result.rows[0];
   }
 
   async markConversationAsRead(conversationId: string, readBy: string): Promise<number> {
+    const readTimestamp = new Date().toISOString();
     const query = `
       UPDATE messages 
-      SET read_at = NOW(), 
+      SET read_at = CURRENT_TIMESTAMP AT TIME ZONE 'UTC', 
           read_status = read_status || $2::jsonb
       WHERE conversation_id = $1 AND read_at IS NULL
       RETURNING id
     `;
-    const readStatus = JSON.stringify({ [readBy]: new Date().toISOString() });
+    const readStatus = JSON.stringify({ [readBy]: readTimestamp });
     const result = await pool.query(query, [conversationId, readStatus]);
     return result.rowCount || 0;
   }
@@ -180,7 +214,10 @@ export class Database {
         conversation_id: row.id,
         sender_type: row.latest_message_sender,
         content: row.latest_message_content,
-        created_at: row.latest_message_time
+        created_at: row.latest_message_time,
+        delivered_at: row.latest_message_time,
+        read_at: undefined,
+        read_status: {}
       } : undefined
     }));
   }

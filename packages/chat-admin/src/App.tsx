@@ -4,6 +4,39 @@ import { Conversation, Message, UserStatus } from './types';
 import { notificationService } from './services/NotificationService';
 import './App.css';
 
+// Vietnamese localization for admin interface
+const vietnameseTexts = {
+  chatAdminDashboard: 'Bảng Điều Khiển Admin Chat',
+  notificationsOn: 'Thông báo Bật',
+  notificationsOff: 'Thông báo Tắt',
+  enableNotifications: 'Bật Thông báo',
+  unreadMessages: 'Tin nhắn chưa đọc',
+  noUnreadMessages: 'Không có tin nhắn chưa đọc',
+  showMore: 'Hiển thị thêm',
+  connected: 'Đã kết nối',
+  connecting: 'Đang kết nối...',
+  reconnecting: 'Đang kết nối lại...',
+  connectionError: 'Lỗi kết nối',
+  retry: 'Thử lại',
+  broadcastMessage: 'Tin nhắn Phát sóng',
+  broadcastPlaceholder: 'Gửi tin nhắn đến tất cả người dùng...',
+  broadcast: 'Phát sóng',
+  conversations: 'Cuộc trò chuyện',
+  online: 'Trực tuyến',
+  offline: 'Ngoại tuyến',
+  admin: 'Admin',
+  started: 'Bắt đầu',
+  selectConversation: 'Chọn một cuộc trò chuyện để bắt đầu chat',
+  selectConversationDesc: 'Chọn một cuộc trò chuyện từ thanh bên để xem tin nhắn và trả lời người dùng.',
+  typeReply: 'Nhập phản hồi của bạn...',
+  send: 'Gửi',
+  userInfo: 'Thông tin người dùng',
+  searchInConversation: 'Tìm kiếm trong cuộc trò chuyện',
+  isTyping: 'đang nhập',
+  areTyping: 'đang nhập',
+  loadingMoreMessages: 'Đang tải thêm tin nhắn...'
+};
+
 const SERVER_URL = 'http://localhost:3001';
 
 function App() {
@@ -23,6 +56,7 @@ function App() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [messageOffset, setMessageOffset] = useState(0);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
   const [showUnreadDropdown, setShowUnreadDropdown] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -367,19 +401,19 @@ function App() {
   const fetchMessages = async (conversationId: string, reset: boolean = true) => {
     try {
       if (reset) {
-        // Load initial 10 messages for new conversation
-        const response = await fetch(`${SERVER_URL}/api/conversations/${conversationId}/messages?offset=0&limit=10&direction=desc`);
+        // Load initial 5 messages for new conversation (consistent with widget)
+        const response = await fetch(`${SERVER_URL}/api/conversations/${conversationId}/messages?offset=0&limit=5&direction=desc`);
         const data = await response.json();
         
         if (data.messages) {
           setMessages(data.messages);
-          setMessageOffset(10);
-          setHasMoreMessages(data.pagination?.hasMore || false);
+          setMessageOffset(5);
+          setHasMoreMessages(data.pagination?.hasMore || data.messages.length === 5);
         } else {
           // Fallback for legacy API response
-          setMessages(data.slice(-10));
-          setMessageOffset(10);
-          setHasMoreMessages(data.length > 10);
+          setMessages(data.slice(-5));
+          setMessageOffset(5);
+          setHasMoreMessages(data.length > 5);
         }
       }
     } catch (error) {
@@ -412,14 +446,20 @@ function App() {
   };
 
   const scrollToBottom = () => {
+    setIsAutoScrolling(true);
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    
+    // Clear auto-scrolling flag after scroll completes
+    setTimeout(() => {
+      setIsAutoScrolling(false);
+    }, 1000); // Give enough time for smooth scroll to complete
   };
 
   const handleMessagesScroll = () => {
-    if (messagesContainerRef.current) {
+    if (messagesContainerRef.current && !isAutoScrolling) {
       const { scrollTop } = messagesContainerRef.current;
       
-      // Load more messages if user scrolls to top
+      // Load more messages if user manually scrolls to top
       if (scrollTop < 50 && hasMoreMessages && !isLoadingHistory) {
         loadMoreMessages();
       }
@@ -533,12 +573,31 @@ function App() {
 
   const formatTime = (timestamp: string | Date) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Format time for GMT+7 timezone (Asia/Bangkok) - same as widget
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Asia/Bangkok',
+      hour12: false
+    });
+  };
+
+  const formatTimeWithTimezone = (timestamp: string | Date) => {
+    const date = new Date(timestamp);
+    // Show full time with timezone indicator for GMT+7 user
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Asia/Bangkok',
+      hour12: false
+    }) + ' GMT+7';
   };
 
   const formatDate = (timestamp: string | Date) => {
     const date = new Date(timestamp);
-    return date.toLocaleDateString();
+    return date.toLocaleDateString('en-US', {
+      timeZone: 'Asia/Bangkok'
+    });
   };
 
   const fetchUnreadMessages = async () => {
@@ -557,10 +616,10 @@ function App() {
   };
 
   const getConnectionStatus = () => {
-    if (isReconnecting) return 'Reconnecting...';
-    if (connectionError) return 'Connection Error';
-    if (isConnected) return 'Connected';
-    return 'Connecting...';
+    if (isReconnecting) return vietnameseTexts.reconnecting;
+    if (connectionError) return vietnameseTexts.connectionError;
+    if (isConnected) return vietnameseTexts.connected;
+    return vietnameseTexts.connecting;
   };
 
   const getMessageStatus = (message: Message) => {
@@ -594,12 +653,12 @@ function App() {
   return (
     <div className="admin-app" data-testid="admin-app">
       <header className="admin-header">
-        <h1>Chat Admin Dashboard</h1>
+        <h1>{vietnameseTexts.chatAdminDashboard}</h1>
         <div className="header-controls">
           <div className="notification-controls">
             <div className={`notification-status ${notificationsEnabled ? 'enabled' : 'disabled'}`}>
               {notificationsEnabled ? '🔔' : '🔕'} 
-              {notificationsEnabled ? 'Notifications On' : 'Notifications Off'}
+              {notificationsEnabled ? vietnameseTexts.notificationsOn : vietnameseTexts.notificationsOff}
             </div>
             {!notificationsEnabled && (
               <button 
@@ -610,7 +669,7 @@ function App() {
                 }}
                 title="Enable browser notifications"
               >
-                Enable Notifications
+                {vietnameseTexts.enableNotifications}
               </button>
             )}
           </div>
@@ -631,7 +690,7 @@ function App() {
             {showUnreadDropdown && (
               <div className="unread-dropdown">
                 <div className="unread-dropdown-header">
-                  <h4>Unread Messages ({unreadMessages.length})</h4>
+                  <h4>{vietnameseTexts.unreadMessages} ({unreadMessages.length})</h4>
                   <button 
                     className="close-dropdown"
                     onClick={() => setShowUnreadDropdown(false)}
@@ -641,7 +700,7 @@ function App() {
                 </div>
                 <div className="unread-messages-list">
                   {unreadMessages.length === 0 ? (
-                    <div className="no-unread">No unread messages</div>
+                    <div className="no-unread">{vietnameseTexts.noUnreadMessages}</div>
                   ) : (
                     unreadMessages.map((msg, index) => (
                       <div 
@@ -665,7 +724,7 @@ function App() {
                   )}
                   {unreadMessages.length >= 10 && (
                     <div className="show-more-unread">
-                      <button onClick={() => fetchUnreadMessages()}>Show More</button>
+                      <button onClick={() => fetchUnreadMessages()}>{vietnameseTexts.showMore}</button>
                     </div>
                   )}
                 </div>
@@ -676,7 +735,7 @@ function App() {
             {getConnectionStatus()}
             {connectionError && (
               <button onClick={retryConnection} className="retry-connection-btn">
-                Retry
+                {vietnameseTexts.retry}
               </button>
             )}
           </div>
@@ -687,12 +746,12 @@ function App() {
         {/* Sidebar */}
         <div className="sidebar">
           <div className="sidebar-section">
-            <h3>Broadcast Message</h3>
+            <h3>{vietnameseTexts.broadcastMessage}</h3>
             <div className="broadcast-section">
               <textarea
                 value={broadcastMessage}
                 onChange={(e) => setBroadcastMessage(e.target.value)}
-                placeholder="Send message to all users..."
+                placeholder={vietnameseTexts.broadcastPlaceholder}
                 rows={3}
                 data-testid="broadcast-input"
               />
@@ -702,14 +761,14 @@ function App() {
                 className="broadcast-btn"
                 data-testid="broadcast-button"
               >
-                Broadcast
+                {vietnameseTexts.broadcast}
               </button>
             </div>
           </div>
 
           <div className="sidebar-section">
             <div className="conversations-header">
-              <h3>Conversations ({conversations.length})</h3>
+              <h3>{vietnameseTexts.conversations} ({conversations.length})</h3>
               <button 
                 className="refresh-conversations-btn"
                 onClick={fetchConversations}
@@ -736,7 +795,7 @@ function App() {
                         <div className="user-details">
                           <span className="user-email">{conversation.user_email}</span>
                           <span className={`status-text ${userStatus?.isOnline ? 'online' : 'offline'}`}>
-                            {userStatus?.isOnline ? 'Online' : 'Offline'}
+                            {userStatus?.isOnline ? vietnameseTexts.online : vietnameseTexts.offline}
                           </span>
                         </div>
                       </div>
@@ -752,7 +811,7 @@ function App() {
                     {conversation.latest_message && (
                       <div className="latest-message">
                         <span className="message-preview">
-                          {conversation.latest_message.sender_type === 'admin' ? 'Admin: ' : ''}
+                          {conversation.latest_message.sender_type === 'admin' ? `${vietnameseTexts.admin}: ` : ''}
                           {conversation.latest_message.content.substring(0, 50)}
                           {conversation.latest_message.content.length > 50 ? '...' : ''}
                         </span>
@@ -781,17 +840,17 @@ function App() {
                     <h2>{selectedConv?.user_email}</h2>
                     <span className="conversation-date">
                       {onlineUsers.get(selectedConv?.user_email || '')?.isOnline ? 
-                        '🟢 Online' : 
-                        `Started: ${selectedConv && formatDate(selectedConv.created_at)}`
+                        `🟢 ${vietnameseTexts.online}` : 
+                        `${vietnameseTexts.started}: ${selectedConv && formatDate(selectedConv.created_at)}`
                       }
                     </span>
                   </div>
                 </div>
                 <div className="chat-actions">
-                  <button className="chat-action-btn" title="User Info">
+                  <button className="chat-action-btn" title={vietnameseTexts.userInfo}>
                     ℹ️
                   </button>
-                  <button className="chat-action-btn" title="Search in conversation">
+                  <button className="chat-action-btn" title={vietnameseTexts.searchInConversation}>
                     🔍
                   </button>
                 </div>
@@ -806,7 +865,7 @@ function App() {
                 {isLoadingHistory && (
                   <div className="loading-history">
                     <div className="loading-spinner"></div>
-                    <p>Loading more messages...</p>
+                    <p>{vietnameseTexts.loadingMoreMessages}</p>
                   </div>
                 )}
                 {messages.map((message) => (
@@ -819,7 +878,7 @@ function App() {
                       <div className="message-text">{message.content}</div>
                       <div className="message-meta">
                         <span className="sender">
-                          {message.sender_type === 'admin' ? 'Admin' : selectedConv?.user_email}
+                          {message.sender_type === 'admin' ? vietnameseTexts.admin : selectedConv?.user_email}
                         </span>
                         <div className="time-and-status">
                           <span className="time">{formatTime(message.created_at)}</span>
@@ -837,7 +896,7 @@ function App() {
                       <span></span>
                     </div>
                     <span className="typing-text">
-                      {Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? 'is' : 'are'} typing...
+                      {Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? vietnameseTexts.isTyping : vietnameseTexts.areTyping}...
                     </span>
                   </div>
                 )}
@@ -854,7 +913,7 @@ function App() {
                       sendMessage();
                     }
                   }}
-                  placeholder="Type your reply..."
+                  placeholder={vietnameseTexts.typeReply}
                   rows={2}
                   data-testid="admin-message-input"
                 />
@@ -863,14 +922,14 @@ function App() {
                   disabled={!newMessage.trim() || !isConnected}
                   data-testid="admin-send-button"
                 >
-                  Send
+                  {vietnameseTexts.send}
                 </button>
               </div>
             </>
           ) : (
             <div className="no-conversation">
-              <h2>Select a conversation to start chatting</h2>
-              <p>Choose a conversation from the sidebar to view messages and reply to users.</p>
+              <h2>{vietnameseTexts.selectConversation}</h2>
+              <p>{vietnameseTexts.selectConversationDesc}</p>
             </div>
           )}
         </div>

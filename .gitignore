@@ -1,4 +1,4 @@
-/node_modules
+node_modules
 .pytest_cache
 *.log
 debug_*.py
@@ -10,3 +10,4 @@ verify_*.py
 two_browser*.py
 realtime_*.py
 simultaneous_*.py
+test-results

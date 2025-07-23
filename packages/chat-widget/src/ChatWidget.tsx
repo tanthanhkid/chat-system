@@ -3,6 +3,20 @@ import { io, Socket } from 'socket.io-client';
 import { Message, ChatWidgetProps } from './types';
 import './ChatWidget.css';
 
+// Vietnamese localization
+const vietnameseTexts = {
+  chatSupport: 'Hỗ Trợ Chat',
+  welcome: 'Chào mừng! Chúng tôi có thể giúp gì cho bạn hôm nay?',
+  typeMessage: 'Nhập tin nhắn của bạn...',
+  connecting: 'Đang kết nối...',
+  send: 'Gửi',
+  online: 'Trực tuyến',
+  reconnecting: 'Đang kết nối lại...',
+  connectionError: 'Lỗi kết nối',
+  retryConnection: 'Thử lại kết nối',
+  loadingMessages: 'Đang tải thêm tin nhắn...'
+};
+
 export const ChatWidget: React.FC<ChatWidgetProps> = ({
   email,
   serverUrl = 'http://localhost:3001',
@@ -22,9 +36,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [forceScrollToBottom, setForceScrollToBottom] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [messageOffset, setMessageOffset] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const connectToServer = useCallback(() => {
     if (socketRef.current) {
@@ -47,6 +63,14 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       setConnectionError(null);
       setIsReconnecting(false);
       reconnectAttempts.current = 0;
+      
+      // Clear previous state to fix message isolation bug
+      setMessages([]);
+      setConversationId(null);
+      setMessageOffset(0);
+      setHasMoreMessages(true);
+      setUnreadCount(0);
+      
       socket.emit('join-user', { email });
     });
 
@@ -84,20 +108,48 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
     });
 
     socket.on('conversation-joined', (data: { conversationId: string; messages: Message[] }) => {
+      console.log('🔍 [WIDGET] Received conversation-joined:', {
+        conversationId: data.conversationId,
+        messageCount: data.messages.length,
+        messages: data.messages.slice(0, 3).map(m => `[${m.sender_type}] ${m.content.substring(0, 30)}...`)
+      });
+      
       setConversationId(data.conversationId);
-      // Only load initial 10 messages
-      const initialMessages = data.messages.slice(-10);
-      setMessages(initialMessages);
-      setMessageOffset(initialMessages.length);
-      setHasMoreMessages(data.messages.length > 10);
+      // Server now sends exactly 5 most recent messages initially, no client-side slicing needed
+      setMessages(data.messages);
+      setMessageOffset(data.messages.length);
+      // For initial load, assume there might be more messages if we got exactly 5
+      setHasMoreMessages(data.messages.length === 5);
+      
+      // If widget is closed, count unread admin messages
+      if (!isOpen) {
+        const unreadAdminMessages = data.messages.filter(
+          msg => msg.sender_type === 'admin' && !msg.read_at
+        ).length;
+        setUnreadCount(unreadAdminMessages);
+      }
     });
 
     socket.on('new-message', (message: Message) => {
       setMessages(prev => [...prev, message]);
       
-      // Mark admin messages as read automatically when received
-      if (message.sender_type === 'admin' && isOpen) {
-        socket.emit('mark-message-read', { messageId: message.id });
+      // Handle admin messages
+      if (message.sender_type === 'admin') {
+        if (isOpen) {
+          // Mark as read immediately when widget is open
+          socket.emit('mark-message-read', { messageId: message.id });
+          // Force scroll to bottom for new admin messages when widget is open
+          setForceScrollToBottom(true);
+        } else {
+          // Increment unread count when widget is closed
+          setUnreadCount(prev => prev + 1);
+        }
+      }
+      
+      // For user messages, also auto-scroll if near bottom
+      if (message.sender_type === 'user') {
+        // Auto-scroll user's own messages
+        setForceScrollToBottom(true);
       }
     });
 
@@ -126,20 +178,44 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   }, [email, serverUrl, isOpen]);
 
   useEffect(() => {
+    // Clear all state on component mount to ensure clean start
+    setMessages([]);
+    setConversationId(null);
+    setMessageOffset(0);
+    setHasMoreMessages(true);
+    setUnreadCount(0);
+    setIsLoadingHistory(false);
+    
+    // Clear any browser storage that might persist messages
+    try {
+      localStorage.removeItem('chat-widget-messages');
+      localStorage.removeItem('chat-widget-conversation');
+      sessionStorage.clear();
+    } catch (e) {
+      // Ignore storage errors
+    }
+    
     connectToServer();
 
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
+      // Clear state on unmount
+      setMessages([]);
+      setConversationId(null);
     };
   }, [connectToServer]);
 
   useEffect(() => {
-    if (shouldAutoScroll) {
+    if (shouldAutoScroll || forceScrollToBottom) {
       scrollToBottom();
+      // Reset force scroll flag after scrolling
+      if (forceScrollToBottom) {
+        setForceScrollToBottom(false);
+      }
     }
-  }, [messages, shouldAutoScroll]);
+  }, [messages, shouldAutoScroll, forceScrollToBottom]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -174,8 +250,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
       
-      // Auto-scroll if user is within 100px of bottom
-      setShouldAutoScroll(distanceFromBottom < 100);
+      // Auto-scroll if user is within 150px of bottom (increased threshold for better UX)
+      setShouldAutoScroll(distanceFromBottom < 150);
       
       // Load more messages if user scrolls to top
       if (scrollTop < 50 && hasMoreMessages && !isLoadingHistory) {
@@ -205,8 +281,15 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
 
   const formatTime = (timestamp: string | Date) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // Format time for GMT+7 timezone (Asia/Bangkok)
+    return date.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      timeZone: 'Asia/Bangkok',
+      hour12: false
+    });
   };
+
 
   const getMessageStatus = (message: Message) => {
     if (message.sender_type === 'admin') return null; // Admin messages don't show status for user
@@ -235,7 +318,24 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   };
 
   const toggleChat = () => {
-    setIsOpen(!isOpen);
+    const newIsOpen = !isOpen;
+    setIsOpen(newIsOpen);
+    
+    // When opening the widget, scroll to bottom to show latest messages
+    if (newIsOpen) {
+      // Clear unread count when widget opens
+      setUnreadCount(0);
+      
+      // Mark all unread admin messages as read
+      if (socketRef.current && conversationId) {
+        socketRef.current.emit('mark-conversation-read', { conversationId });
+      }
+      
+      // Use setTimeout to ensure DOM is updated before scrolling
+      setTimeout(() => {
+        setForceScrollToBottom(true);
+      }, 100);
+    }
   };
 
   const retryConnection = () => {
@@ -244,10 +344,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
   };
 
   const getConnectionStatus = () => {
-    if (isReconnecting) return 'Reconnecting...';
-    if (connectionError) return 'Connection Error';
-    if (isConnected) return 'Online';
-    return 'Connecting...';
+    if (isReconnecting) return vietnameseTexts.reconnecting;
+    if (connectionError) return vietnameseTexts.connectionError;
+    if (isConnected) return vietnameseTexts.online;
+    return vietnameseTexts.connecting;
   };
 
   const positionClass = position === 'bottom-left' ? 'chat-widget-left' : 'chat-widget-right';
@@ -263,6 +363,11 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
       >
         {isOpen ? '✕' : '💬'}
         {!isConnected && <span className={`connection-indicator ${isReconnecting ? 'reconnecting' : 'offline'}`} />}
+        {!isOpen && unreadCount > 0 && (
+          <span className="unread-badge" data-testid="unread-badge">
+            {unreadCount > 99 ? '99+' : unreadCount}
+          </span>
+        )}
       </button>
 
       {/* Chat Window */}
@@ -270,7 +375,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
         <div className="chat-window" data-testid="chat-window">
           {/* Header */}
           <div className="chat-header" style={{ backgroundColor: primaryColor }}>
-            <h3>Chat Support</h3>
+            <h3>{vietnameseTexts.chatSupport}</h3>
             <div className={`status ${isConnected ? 'online' : connectionError ? 'error' : 'offline'}`}>
               {getConnectionStatus()}
             </div>
@@ -281,7 +386,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             <div className="connection-error" data-testid="connection-error">
               <p>{connectionError}</p>
               <button onClick={retryConnection} className="retry-button">
-                Retry Connection
+                {vietnameseTexts.retryConnection}
               </button>
             </div>
           )}
@@ -296,12 +401,12 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
             {isLoadingHistory && (
               <div className="loading-history">
                 <div className="loading-spinner"></div>
-                <p>Loading more messages...</p>
+                <p>{vietnameseTexts.loadingMessages}</p>
               </div>
             )}
             {messages.length === 0 ? (
               <div className="welcome-message">
-                <p>Welcome! How can we help you today?</p>
+                <p>{vietnameseTexts.welcome}</p>
               </div>
             ) : (
               messages.map((message) => (
@@ -329,7 +434,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={!isConnected ? "Connecting..." : "Type your message..."}
+              placeholder={!isConnected ? vietnameseTexts.connecting : vietnameseTexts.typeMessage}
               rows={1}
               disabled={!isConnected}
               data-testid="message-input"
@@ -340,7 +445,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({
               style={{ backgroundColor: primaryColor }}
               data-testid="send-button"
             >
-              Send
+              {vietnameseTexts.send}
             </button>
           </div>
         </div>

@@ -1,5 +1,11 @@
 
-lỗi: 
-- trên admin interface , khi admin gửi tin nhắn cho user thì tin nhắn của admin phải nằm bên phải. tin nhắn của user phải nằm bên trái. hiện tại đang sai.
-- trên admin interface , khi admin bấm send thì tin nhắn không hiển thị ngay trong khung chat , phải reload lại mới thấy tin nhắn admin gửi đi. còn tin nhắn user gửi lên thì hiển thị ngay.
-- cải tổ UIUX lại giống IOS 26 cả về màu sắc và giao diện, hiệu ứng, màu sắc hài hoà tổng thể, suy nghĩ kỹ việc này.
+chỉnh sửa:  
+- ở cả chat widget và admin interface chat windows đều chỉ load 5 tin nhắn mới nhất. khi scroll lên trên thì sẽ thấy nút tải message cũ, khi click thì tải thêm 10 tin cũ, 
+nếu còn thì hiển thị nút đó để click tiếp nếu user cần, nếu hết tin nhắn rồi thì thông báo không còn tin nhắn cũ.
+- ở cả chat widget và admin interface chat windows bên dưới tin nhắn gửi đi thì có hiển thị trang thái đã xem hay chưa để người gửi biết người đọc đã xem.
+
+Giao diện nâng cấp:
+- Sử dụng shadcn cho admin interface
+
+Hãy fix lỗi trước sau đó dùng selenium viết automation test cho các chức năng này, test và fix đến khi nào hết lỗi thì mới được phép dừng, think hard.
+nếu cần sửa database thì xoá docker container cũ và chạy docker compose để khởi tạo lại từ init.sql script
