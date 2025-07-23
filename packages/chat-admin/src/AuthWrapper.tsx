@@ -32,7 +32,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
   return (
     <div className="relative">
       {/* Logout button overlay */}
-      <div className="fixed top-4 right-4 z-50">
+      <div className="hidden fixed top-4 right-4 z-50">
         <div className="flex items-center space-x-3 bg-white/10 backdrop-blur-md rounded-lg px-3 py-2 border border-white/20">
           <div className="flex items-center space-x-2 text-white text-sm">
             <User className="w-4 h-4" />
