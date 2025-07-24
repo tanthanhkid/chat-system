@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Card } from './ui/card';
 
 interface LoginFormProps {
   onLogin: (token: string) => void;
@@ -52,82 +51,120 @@ export function LoginForm({ onLogin, isLoading = false }: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
-      <div className="w-full max-w-md">
-        <Card className="p-8 shadow-2xl bg-white/10 backdrop-blur-md border border-white/20">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">
-              Admin Chat System
-            </h1>
-            <p className="text-white/70">
-              Đăng nhập để quản lý hệ thống chat
-            </p>
-          </div>
+    <div className="cyberpunk-body min-h-screen flex items-center justify-center relative overflow-hidden">
+      {/* Background matrix effect */}
+      <div className="fixed inset-0 pointer-events-none opacity-10">
+        <div className="cyberpunk-scanlines"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyberpunk-cyan/5 to-transparent"></div>
+      </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-                <p className="text-red-300 text-sm text-center">{error}</p>
+      <div className="relative z-10 w-full max-w-md mx-4">
+        <div className="cyberpunk-card p-8 border-2 border-cyberpunk-cyan/30 rounded-lg backdrop-blur-lg relative overflow-hidden">
+          {/* Card glow effect */}
+          <div className="absolute inset-0 cyberpunk-glow opacity-50 pointer-events-none"></div>
+          <div className="absolute inset-0 bg-gradient-to-br from-cyberpunk-magenta/10 to-cyberpunk-cyan/10 pointer-events-none"></div>
+          
+          <div className="relative z-10">
+            {/* Terminal header */}
+            <div className="text-center mb-8 space-y-4">
+              <div className="cyberpunk-terminal-header">
+                <div className="flex items-center justify-center space-x-2 mb-4">
+                  <div className="w-3 h-3 rounded-full bg-cyberpunk-red animate-pulse"></div>
+                  <div className="w-3 h-3 rounded-full bg-cyberpunk-yellow animate-pulse" style={{animationDelay: '0.5s'}}></div>
+                  <div className="w-3 h-3 rounded-full bg-cyberpunk-green animate-pulse" style={{animationDelay: '1s'}}></div>
+                </div>
+                <div className="cyberpunk-text text-sm mb-2 font-mono">
+                  ADMIN_TERMINAL_v2.1.47
+                </div>
               </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="username" className="block text-white/80 text-sm font-medium mb-2">
-                  Tên đăng nhập
-                </label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={credentials.username}
-                  onChange={(e) => handleChange('username', e.target.value)}
-                  placeholder="Nhập tên đăng nhập"
-                  className="bg-white/10 border-white/30 text-white placeholder-white/50 focus:border-blue-400 focus:ring-blue-400/20"
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-white/80 text-sm font-medium mb-2">
-                  Mật khẩu
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={credentials.password}
-                  onChange={(e) => handleChange('password', e.target.value)}
-                  placeholder="Nhập mật khẩu"
-                  className="bg-white/10 border-white/30 text-white placeholder-white/50 focus:border-blue-400 focus:ring-blue-400/20"
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
+              
+              <h1 className="text-3xl font-bold cyberpunk-text-glow mb-2 font-mono tracking-wider">
+                ≫ SYSTEM ACCESS ≪
+              </h1>
+              <p className="cyberpunk-text text-sm font-mono opacity-80">
+                Authorized personnel only • Đăng nhập để truy cập
+              </p>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-              disabled={isSubmitting || isLoading}
-            >
-              {isSubmitting ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Đang đăng nhập...</span>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="cyberpunk-alert bg-cyberpunk-red/10 border border-cyberpunk-red/50 rounded p-3 backdrop-blur-sm relative overflow-hidden">
+                  <div className="absolute inset-0 bg-cyberpunk-red/5 animate-pulse"></div>
+                  <p className="cyberpunk-text text-sm text-center font-mono relative z-10">
+                    ⚠ ERROR: {error}
+                  </p>
                 </div>
-              ) : (
-                'Đăng nhập'
               )}
-            </Button>
-          </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-white/60 text-xs">
-              Mặc định: username = <code className="bg-white/10 px-1 rounded">admin</code>, 
-              password = <code className="bg-white/10 px-1 rounded">admin123</code>
-            </p>
+              <div className="space-y-4">
+                <div className="cyberpunk-input-group">
+                  <label htmlFor="username" className="block cyberpunk-text text-sm font-medium mb-2 font-mono">
+                    └─ USERNAME:
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="username"
+                      type="text"
+                      value={credentials.username}
+                      onChange={(e) => handleChange('username', e.target.value)}
+                      placeholder="Enter username..."
+                      className="cyberpunk-input w-full bg-transparent border-2 border-cyberpunk-cyan/50 text-cyberpunk-cyan placeholder-cyberpunk-cyan/50 font-mono text-sm px-4 py-3 rounded focus:border-cyberpunk-magenta focus:ring-0 focus:outline-none transition-all duration-300"
+                      disabled={isSubmitting}
+                      required
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-cyberpunk-cyan rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+
+                <div className="cyberpunk-input-group">
+                  <label htmlFor="password" className="block cyberpunk-text text-sm font-medium mb-2 font-mono">
+                    └─ PASSWORD:
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type="password"
+                      value={credentials.password}
+                      onChange={(e) => handleChange('password', e.target.value)}
+                      placeholder="Enter password..."
+                      className="cyberpunk-input w-full bg-transparent border-2 border-cyberpunk-cyan/50 text-cyberpunk-cyan placeholder-cyberpunk-cyan/50 font-mono text-sm px-4 py-3 rounded focus:border-cyberpunk-magenta focus:ring-0 focus:outline-none transition-all duration-300"
+                      disabled={isSubmitting}
+                      required
+                    />
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2 w-2 h-2 bg-cyberpunk-cyan rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full cyberpunk-button bg-gradient-to-r from-cyberpunk-magenta/20 to-cyberpunk-cyan/20 border-2 border-cyberpunk-magenta hover:border-cyberpunk-cyan cyberpunk-text-glow font-mono py-3 px-6 rounded transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative overflow-hidden group"
+                disabled={isSubmitting || isLoading}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-cyberpunk-magenta/10 to-cyberpunk-cyan/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative z-10 flex items-center justify-center space-x-2">
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-cyberpunk-cyan/30 border-t-cyberpunk-cyan rounded-full animate-spin"></div>
+                      <span>AUTHENTICATING...</span>
+                    </>
+                  ) : (
+                    <span>≫ CONNECT ≪</span>
+                  )}
+                </div>
+              </Button>
+            </form>
+
+            <div className="mt-8 text-center">
+              <div className="cyberpunk-info-panel bg-cyberpunk-background/50 border border-cyberpunk-cyan/20 rounded p-3 backdrop-blur-sm">
+                <p className="cyberpunk-text text-xs font-mono opacity-60">
+                  DEFAULT_CREDS → user: <code className="cyberpunk-code bg-cyberpunk-cyan/10 px-1 rounded text-cyberpunk-cyan">admin</code> | 
+                  pass: <code className="cyberpunk-code bg-cyberpunk-cyan/10 px-1 rounded text-cyberpunk-cyan">admin123</code>
+                </p>
+              </div>
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

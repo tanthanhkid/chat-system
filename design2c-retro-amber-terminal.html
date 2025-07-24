@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design 2C: Retro Amber Terminal - Admin Chat Interface</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323:wght@400&family=Source+Code+Pro:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'VT323', 'Courier New', monospace;
+            background: #2b1810;
+            color: #ffb000;
+            min-height: 100vh;
+            overflow: hidden;
+            font-size: 16px;
+            line-height: 1.4;
+            position: relative;
+        }
+
+        /* CRT Monitor Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(255, 176, 0, 0.03) 2px,
+                    rgba(255, 176, 0, 0.03) 4px
+                );
+            pointer-events: none;
+            z-index: 1000;
+            animation: crt-scanlines 0.1s linear infinite;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(43, 24, 16, 0.4) 100%);
+            pointer-events: none;
+            z-index: 999;
+            border-radius: 15px;
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.8);
+        }
+
+        /* CRT Screen Bezel */
+        .crt-bezel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 20px solid #1a1a1a;
+            border-radius: 25px;
+            box-shadow: 
+                inset 0 0 20px rgba(0, 0, 0, 0.8),
+                0 0 50px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            z-index: 1001;
+        }
+
+        /* Terminal Header */
+        .terminal-header {
+            background: linear-gradient(90deg, #1a1008, #332211, #1a1008);
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+            border-bottom: 3px solid #cc7722;
+            box-shadow: 
+                0 0 20px rgba(204, 119, 34, 0.5),
+                inset 0 2px 0 rgba(255, 176, 0, 0.2);
+            position: relative;
+        }
+
+        .terminal-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 176, 0, 0.1) 50%, 
+                transparent 100%);
+            animation: amber-sweep 5s ease-in-out infinite;
+        }
+
+        .terminal-tabs {
+            display: flex;
+            gap: 20px;
+            z-index: 2;
+        }
+
+        .tab {
+            background: linear-gradient(135deg, #332211, #1a1008);
+            padding: 10px 20px;
+            border-radius: 8px 8px 0 0;
+            font-size: 14px;
+            color: #cc7722;
+            position: relative;
+            font-family: 'Source Code Pro', monospace;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border: 2px solid #cc7722;
+            transition: all 0.4s ease;
+            text-shadow: 0 0 8px #ffb000;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #ffb000, #cc7722);
+            color: #1a1008;
+            box-shadow: 
+                0 0 20px rgba(255, 176, 0, 0.7),
+                inset 0 0 15px rgba(255, 255, 255, 0.1);
+            animation: amber-glow 3s ease-in-out infinite alternate;
+            text-shadow: none;
+        }
+
+        .tab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(204, 119, 34, 0.4);
+        }
+
+        .terminal-controls {
+            display: flex;
+            gap: 12px;
+            z-index: 2;
+        }
+
+        .control {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Source Code Pro', monospace;
+            font-weight: 700;
+            border: 2px solid currentColor;
+        }
+
+        .control.minimize { 
+            background: #ffaa00;
+            color: #1a1008;
+            box-shadow: 0 0 12px rgba(255, 170, 0, 0.6);
+        }
+        .control.maximize { 
+            background: #ff8800;
+            color: #1a1008;
+            box-shadow: 0 0 12px rgba(255, 136, 0, 0.6);
+        }
+        .control.close { 
+            background: #ff4400;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(255, 68, 0, 0.6);
+        }
+
+        .control:hover {
+            transform: scale(1.3);
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        /* Terminal Workspace */
+        .terminal-workspace {
+            display: flex;
+            height: calc(100vh - 45px);
+        }
+
+        /* Command Panel */
+        .command-panel {
+            width: 400px;
+            background: linear-gradient(180deg, #1f1409, #332211, #1f1409);
+            border-right: 3px solid #cc7722;
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(255, 176, 0, 0.1);
+        }
+
+        .command-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 30px,
+                    rgba(255, 176, 0, 0.02) 30px,
+                    rgba(255, 176, 0, 0.02) 60px
+                );
+            pointer-events: none;
+        }
+
+        .terminal-prompt {
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .prompt-symbol {
+            color: #ffb000;
+            font-weight: bold;
+            font-size: 20px;
+            text-shadow: 0 0 12px #ffb000;
+            animation: amber-prompt-blink 2s ease-in-out infinite alternate;
+        }
+
+        .command-path {
+            color: #cc7722;
+            font-size: 16px;
+            font-family: 'Source Code Pro', monospace;
+            text-shadow: 0 0 8px #cc7722;
+            font-weight: 600;
+        }
+
+        .conversation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .conversation-entry {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            border: 2px solid transparent;
+            background: linear-gradient(135deg, rgba(255, 176, 0, 0.05), rgba(204, 119, 34, 0.05));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .conversation-entry::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 176, 0, 0.15), 
+                transparent);
+            transition: left 0.7s ease;
+        }
+
+        .conversation-entry:hover::before {
+            left: 100%;
+        }
+
+        .conversation-entry:hover {
+            background: linear-gradient(135deg, rgba(255, 176, 0, 0.1), rgba(204, 119, 34, 0.1));
+            border-color: #ffb000;
+            box-shadow: 0 0 20px rgba(255, 176, 0, 0.3);
+            transform: translateX(5px);
+        }
+
+        .conversation-entry.active {
+            background: linear-gradient(135deg, #ffb000, #cc7722);
+            color: #1a1008;
+            border-color: #ffaa00;
+            box-shadow: 
+                0 0 30px rgba(255, 176, 0, 0.5),
+                inset 0 0 20px rgba(255, 255, 255, 0.2);
+            animation: amber-active-pulse 4s ease-in-out infinite alternate;
+        }
+
+        .conversation-entry.active .unread-count {
+            background: #1a1008;
+            color: #ffb000;
+            box-shadow: 0 0 10px #ffb000;
+        }
+
+        .file-icon {
+            font-size: 22px;
+            filter: drop-shadow(0 0 5px currentColor);
+        }
+
+        .user-name {
+            flex: 1;
+            font-size: 15px;
+            font-weight: 500;
+            font-family: 'Source Code Pro', monospace;
+            text-transform: lowercase;
+            letter-spacing: 1px;
+        }
+
+        .unread-count {
+            background: linear-gradient(135deg, #ffb000, #cc7722);
+            color: #1a1008;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            font-family: 'Source Code Pro', monospace;
+            box-shadow: 0 0 15px rgba(255, 176, 0, 0.5);
+            animation: amber-notification 2.5s ease-in-out infinite alternate;
+        }
+
+        .conversation-entry.online::before {
+            content: '●';
+            color: #ff8800;
+            margin-right: 10px;
+            font-size: 16px;
+            animation: amber-online-beat 2.5s infinite;
+            text-shadow: 0 0 10px #ff8800;
+        }
+
+        .conversation-entry.offline::before {
+            content: '●';
+            color: #665544;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        /* Chat Terminal */
+        .chat-terminal {
+            flex: 1;
+            background: linear-gradient(180deg, #1a1008, #2b1810, #1a1008);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .chat-terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 30%, rgba(255, 176, 0, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(204, 119, 34, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            animation: amber-ambient 15s ease-in-out infinite alternate;
+        }
+
+        .chat-header {
+            background: linear-gradient(90deg, #1a1008, #332211, #1a1008);
+            padding: 25px;
+            border-bottom: 3px solid #cc7722;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2;
+            position: relative;
+            box-shadow: 0 3px 15px rgba(204, 119, 34, 0.3);
+        }
+
+        .terminal-title {
+            color: #ffb000;
+            font-weight: 700;
+            font-size: 18px;
+            font-family: 'Source Code Pro', monospace;
+            text-transform: lowercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px #ffb000;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #ff8800;
+            font-family: 'Source Code Pro', monospace;
+            text-transform: lowercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px #ff8800;
+            font-weight: 600;
+        }
+
+        .connection-status::before {
+            content: '●';
+            animation: amber-connection-pulse 2s infinite;
+            font-size: 14px;
+        }
+
+        /* Message Output */
+        .message-output {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            font-family: 'VT323', monospace;
+            z-index: 2;
+            position: relative;
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px 0;
+            border-left: 4px solid transparent;
+            padding-left: 25px;
+            transition: all 0.4s ease;
+            position: relative;
+        }
+
+        .log-entry::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 176, 0, 0.1), transparent);
+            transition: width 0.5s ease;
+        }
+
+        .log-entry:hover::before {
+            width: 100%;
+        }
+
+        .log-entry:hover {
+            background: rgba(255, 176, 0, 0.03);
+            border-left-color: #ffb000;
+            transform: translateX(5px);
+        }
+
+        .log-entry.user {
+            border-left-color: #ff8800;
+        }
+
+        .log-entry.admin {
+            border-left-color: #cc7722;
+        }
+
+        .timestamp {
+            color: #996633;
+            font-size: 13px;
+            min-width: 100px;
+            font-weight: 400;
+            font-family: 'Source Code Pro', monospace;
+            text-shadow: 0 0 5px #996633;
+        }
+
+        .sender {
+            color: #cc7722;
+            font-weight: 700;
+            min-width: 80px;
+            font-family: 'Source Code Pro', monospace;
+            text-transform: lowercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px #cc7722;
+        }
+
+        .log-entry.user .sender {
+            color: #ff8800;
+            text-shadow: 0 0 10px #ff8800;
+        }
+
+        .content {
+            color: #ffb000;
+            flex: 1;
+            word-wrap: break-word;
+            text-shadow: 0 0 5px rgba(255, 176, 0, 0.3);
+            font-size: 16px;
+        }
+
+        /* Command Input */
+        .command-input {
+            background: linear-gradient(90deg, #1a1008, #332211, #1a1008);
+            padding: 25px;
+            border-top: 3px solid #cc7722;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 2;
+            position: relative;
+            box-shadow: 0 -3px 15px rgba(204, 119, 34, 0.3);
+        }
+
+        .input-prompt {
+            color: #ffb000;
+            font-weight: bold;
+            white-space: nowrap;
+            font-family: 'Source Code Pro', monospace;
+            text-shadow: 0 0 10px #ffb000;
+            font-size: 16px;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.6);
+            border: 3px solid #cc7722;
+            color: #ffb000;
+            font-family: 'VT323', monospace;
+            font-size: 16px;
+            outline: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            transition: all 0.4s ease;
+            text-shadow: 0 0 5px rgba(255, 176, 0, 0.5);
+        }
+
+        .terminal-input:focus {
+            border-color: #ffb000;
+            box-shadow: 
+                0 0 25px rgba(255, 176, 0, 0.4),
+                inset 0 0 25px rgba(255, 176, 0, 0.1);
+            background: rgba(255, 176, 0, 0.05);
+        }
+
+        .terminal-input::placeholder {
+            color: #774433;
+            font-style: italic;
+        }
+
+        /* Cursor animation */
+        .cursor {
+            color: #ffb000;
+            font-weight: bold;
+            animation: amber-cursor 1.2s infinite;
+            text-shadow: 0 0 10px #ffb000;
+            font-size: 18px;
+        }
+
+        /* System messages */
+        .system-message {
+            color: #ff8800;
+            font-style: italic;
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(255, 136, 0, 0.1), rgba(255, 176, 0, 0.1));
+            border: 3px solid #ff8800;
+            border-radius: 8px;
+            font-family: 'Source Code Pro', monospace;
+            text-shadow: 0 0 10px #ff8800;
+            box-shadow: 0 0 20px rgba(255, 136, 0, 0.2);
+            animation: amber-system-pulse 5s ease-in-out infinite alternate;
+        }
+
+        /* Animations */
+        @keyframes crt-scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
+        }
+
+        @keyframes amber-sweep {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        @keyframes amber-glow {
+            0% { box-shadow: 0 0 20px rgba(255, 176, 0, 0.7); }
+            100% { box-shadow: 0 0 35px rgba(255, 176, 0, 0.9), 0 0 50px rgba(204, 119, 34, 0.5); }
+        }
+
+        @keyframes amber-prompt-blink {
+            0%, 100% { opacity: 1; text-shadow: 0 0 12px #ffb000; }
+            50% { opacity: 0.7; text-shadow: 0 0 20px #ffb000; }
+        }
+
+        @keyframes amber-active-pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.015); }
+        }
+
+        @keyframes amber-notification {
+            0% { box-shadow: 0 0 15px rgba(255, 176, 0, 0.5); }
+            100% { box-shadow: 0 0 25px rgba(255, 176, 0, 0.7); }
+        }
+
+        @keyframes amber-online-beat {
+            0%, 100% { 
+                text-shadow: 0 0 10px #ff8800; 
+                transform: scale(1); 
+            }
+            50% { 
+                text-shadow: 0 0 20px #ff8800, 0 0 30px #ff8800; 
+                transform: scale(1.15); 
+            }
+        }
+
+        @keyframes amber-connection-pulse {
+            0%, 100% { transform: scale(1); color: #ff8800; }
+            50% { transform: scale(1.2); color: #ffb000; }
+        }
+
+        @keyframes amber-ambient {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes amber-cursor {
+            0%, 60% { opacity: 1; }
+            61%, 100% { opacity: 0; }
+        }
+
+        @keyframes amber-system-pulse {
+            0% { box-shadow: 0 0 20px rgba(255, 136, 0, 0.2); }
+            100% { box-shadow: 0 0 35px rgba(255, 136, 0, 0.4); }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: linear-gradient(180deg, #1a1008, #332211);
+            border-radius: 6px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #cc7722, #ffb000);
+            border-radius: 6px;
+            box-shadow: 0 0 10px rgba(204, 119, 34, 0.4);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #ffb000, #ff8800);
+            box-shadow: 0 0 15px rgba(255, 176, 0, 0.6);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .terminal-workspace {
+                flex-direction: column;
+            }
+            
+            .command-panel {
+                width: 100%;
+                height: 40vh;
+                border-right: none;
+                border-bottom: 3px solid #cc7722;
+            }
+            
+            .chat-terminal {
+                height: 60vh;
+            }
+            
+            .conversation-list {
+                flex-direction: row;
+                overflow-x: auto;
+                gap: 18px;
+                padding-bottom: 18px;
+            }
+            
+            .conversation-entry {
+                min-width: 240px;
+            }
+        }
+
+        /* Loading animation */
+        .loading-dots::after {
+            content: '';
+            animation: amber-loading 1.8s infinite;
+        }
+
+        @keyframes amber-loading {
+            0% { content: ''; }
+            25% { content: '█'; }
+            50% { content: '██'; }
+            75% { content: '███'; }
+            100% { content: ''; }
+        }
+
+        /* Retro boot text */
+        .boot-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffb000;
+            font-family: 'VT323', monospace;
+            font-size: 18px;
+            text-shadow: 0 0 10px #ffb000;
+            z-index: 2000;
+            opacity: 0;
+            animation: boot-sequence 3s ease-in-out;
+        }
+
+        @keyframes boot-sequence {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Phosphor burn effect */
+        .phosphor-burn {
+            position: absolute;
+            color: rgba(255, 176, 0, 0.3);
+            pointer-events: none;
+            font-family: 'VT323', monospace;
+            animation: phosphor-fade 10s ease-out forwards;
+        }
+
+        @keyframes phosphor-fade {
+            0% { opacity: 0.6; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- CRT Bezel -->
+    <div class="crt-bezel"></div>
+
+    <!-- Boot Text -->
+    <div class="boot-text" id="bootText">
+        AMBER TERMINAL v2.1<br>
+        COPYRIGHT 1984 RETRO SYSTEMS<br>
+        BOOTING CHAT SYSTEM...<br>
+        OK
+    </div>
+
+    <!-- Terminal Header -->
+    <header class="terminal-header">
+        <div class="terminal-tabs">
+            <span class="tab active">AMBER-TERM-ADMIN.EXE</span>
+        </div>
+        <div class="terminal-controls">
+            <div class="control minimize">−</div>
+            <div class="control maximize">□</div>
+            <div class="control close">×</div>
+        </div>
+    </header>
+
+    <!-- Terminal Workspace -->
+    <main class="terminal-workspace">
+        <!-- Command Panel -->
+        <section class="command-panel">
+            <div class="terminal-prompt">
+                <span class="prompt-symbol">C:\></span>
+                <span class="command-path">conversations\</span>
+            </div>
+            
+            <div class="conversation-list">
+                <div class="conversation-entry online active">
+                    <span class="file-icon">📄</span>
+                    <span class="user-name">user1@amber.dos</span>
+                    <span class="unread-count">[3]</span>
+                </div>
+                
+                <div class="conversation-entry online">
+                    <span class="file-icon">📄</span>
+                    <span class="user-name">user2@retro.sys</span>
+                    <span class="unread-count">[1]</span>
+                </div>
+                
+                <div class="conversation-entry offline">
+                    <span class="file-icon">📁</span>
+                    <span class="user-name">user3@vintage.net</span>
+                    <span class="unread-count">[0]</span>
+                </div>
+                
+                <div class="conversation-entry online">
+                    <span class="file-icon">📄</span>
+                    <span class="user-name">support@amber.corp</span>
+                    <span class="unread-count">[2]</span>
+                </div>
+                
+                <div class="conversation-entry offline">
+                    <span class="file-icon">📁</span>
+                    <span class="user-name">test@crt.monitor</span>
+                    <span class="unread-count">[0]</span>
+                </div>
+            </div>
+
+            <div class="system-message">
+                <strong>SYSTEM STATUS:</strong> 5 ACTIVE CONNECTIONS | 6 MESSAGES IN BUFFER | CRT MONITOR READY
+            </div>
+        </section>
+
+        <!-- Chat Terminal -->
+        <section class="chat-terminal">
+            <div class="chat-header">
+                <span class="terminal-title">chat session: user1@amber.dos</span>
+                <span class="connection-status">online</span>
+            </div>
+            
+            <div class="message-output" id="messageOutput">
+                <div class="log-entry user">
+                    <span class="timestamp">[16:30:45]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Xin chào, tôi cần hỗ trợ với tài khoản của mình</span>
+                </div>
+                
+                <div class="log-entry admin">
+                    <span class="timestamp">[16:31:02]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?</span>
+                </div>
+                
+                <div class="log-entry user">
+                    <span class="timestamp">[16:31:15]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Tôi không thể đăng nhập được, nó báo lỗi "Email hoặc mật khẩu không đúng"</span>
+                </div>
+                
+                <div class="log-entry admin">
+                    <span class="timestamp">[16:31:28]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">Tôi hiểu vấn đề. Để kiểm tra, bạn có thể xác nhận email đăng ký không?</span>
+                </div>
+                
+                <div class="log-entry user">
+                    <span class="timestamp">[16:31:45]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Đúng rồi, email là user1@amber.dos</span>
+                </div>
+                
+                <div class="system-message">
+                    <strong>INFO:</strong> USER TYPING <span class="loading-dots"></span>
+                </div>
+            </div>
+            
+            <div class="command-input">
+                <span class="input-prompt">admin@amber:~$</span>
+                <input type="text" class="terminal-input" placeholder="nhập tin nhắn retro..." id="messageInput" />
+                <span class="cursor">█</span>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Hide boot text after animation
+        setTimeout(() => {
+            document.getElementById('bootText').style.display = 'none';
+        }, 3000);
+
+        // Terminal functionality
+        const messageInput = document.getElementById('messageInput');
+        const messageOutput = document.getElementById('messageOutput');
+        const cursor = document.querySelector('.cursor');
+        const conversationEntries = document.querySelectorAll('.conversation-entry');
+
+        // Enhanced focus management with amber effects
+        messageInput.addEventListener('focus', () => {
+            cursor.style.animation = 'amber-cursor 1s infinite';
+        });
+
+        messageInput.addEventListener('blur', () => {
+            cursor.style.animation = 'amber-cursor 2.5s infinite';
+        });
+
+        // Auto-focus on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                messageInput.focus();
+            }, 3000);
+        });
+
+        // Enhanced send message with amber effects
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message) {
+                const timestamp = new Date().toLocaleTimeString('vi-VN', { 
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry admin';
+                logEntry.innerHTML = `
+                    <span class="timestamp">[${timestamp}]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">${message}</span>
+                `;
+                
+                // Add amber entrance effect
+                logEntry.style.opacity = '0';
+                logEntry.style.transform = 'translateX(-20px)';
+                messageOutput.appendChild(logEntry);
+                
+                // Animate in
+                setTimeout(() => {
+                    logEntry.style.transition = 'all 0.6s ease';
+                    logEntry.style.opacity = '1';
+                    logEntry.style.transform = 'translateX(0)';
+                }, 10);
+                
+                messageInput.value = '';
+                messageOutput.scrollTop = messageOutput.scrollHeight;
+
+                // Create phosphor burn effect
+                createPhosphorBurn(message, logEntry);
+
+                // Amber system message
+                setTimeout(() => {
+                    const systemMsg = document.createElement('div');
+                    systemMsg.className = 'system-message';
+                    systemMsg.innerHTML = '<strong>TRANSMISSION:</strong> MESSAGE SENT TO AMBER BUFFER SUCCESSFULLY';
+                    messageOutput.appendChild(systemMsg);
+                    messageOutput.scrollTop = messageOutput.scrollHeight;
+                    
+                    setTimeout(() => {
+                        systemMsg.style.transition = 'all 0.6s ease';
+                        systemMsg.style.opacity = '0';
+                        systemMsg.style.transform = 'translateY(-20px)';
+                        setTimeout(() => systemMsg.remove(), 600);
+                    }, 3000);
+                }, 700);
+            }
+        }
+
+        // Create phosphor burn effect
+        function createPhosphorBurn(text, element) {
+            const rect = element.getBoundingClientRect();
+            const burn = document.createElement('div');
+            burn.className = 'phosphor-burn';
+            burn.textContent = text.substring(0, 20);
+            burn.style.position = 'fixed';
+            burn.style.left = rect.left + 'px';
+            burn.style.top = rect.top + 'px';
+            burn.style.fontSize = '16px';
+            document.body.appendChild(burn);
+            
+            setTimeout(() => burn.remove(), 10000);
+        }
+
+        // Enter key handling
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Enhanced conversation switching
+        conversationEntries.forEach(entry => {
+            entry.addEventListener('click', function() {
+                // Remove active class from all entries
+                conversationEntries.forEach(e => e.classList.remove('active'));
+                // Add active class to clicked entry
+                this.classList.add('active');
+                
+                // Update terminal title
+                const username = this.querySelector('.user-name').textContent;
+                document.querySelector('.terminal-title').textContent = `chat session: ${username}`;
+                
+                // Clear and simulate loading new conversation
+                messageOutput.innerHTML = `
+                    <div class="system-message">
+                        <strong>LOADING:</strong> ACCESSING AMBER RECORDS FOR ${username}<span class="loading-dots"></span>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    messageOutput.innerHTML = `
+                        <div class="log-entry user">
+                            <span class="timestamp">[${new Date().toLocaleTimeString('vi-VN', { hour12: false })}]</span>
+                            <span class="sender">user:</span>
+                            <span class="content">Chào admin, tôi có thể được hỗ trợ không?</span>
+                        </div>
+                    `;
+                }, 1500);
+            });
+        });
+
+        // Amber command simulation
+        messageInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            
+            // Handle special amber commands
+            if (value.startsWith('\\')) {
+                if (value === '\\dir') {
+                    messageOutput.innerHTML += `
+                        <div class="system-message">
+                            <strong>DIRECTORY:</strong> USER1.DAT USER2.DAT USER3.DAT SUPPORT.DAT TEST.DAT
+                        </div>
+                    `;
+                    messageInput.value = '';
+                } else if (value === '\\cls') {
+                    messageOutput.innerHTML = '';
+                    messageInput.value = '';
+                } else if (value === '\\ver') {
+                    const systemMsg = document.createElement('div');
+                    systemMsg.className = 'system-message';
+                    systemMsg.innerHTML = '<strong>VERSION:</strong> AMBER TERMINAL v2.1 | COPYRIGHT 1984 RETRO SYSTEMS | DOS 3.3 COMPATIBLE';
+                    messageOutput.appendChild(systemMsg);
+                    messageInput.value = '';
+                    messageOutput.scrollTop = messageOutput.scrollHeight;
+                } else if (value === '\\time') {
+                    const now = new Date();
+                    messageOutput.innerHTML += `
+                        <div class="system-message">
+                            <strong>SYSTEM TIME:</strong> ${now.toLocaleDateString()} ${now.toLocaleTimeString()}
+                        </div>
+                    `;
+                    messageInput.value = '';
+                } else if (value === '\\mem') {
+                    messageOutput.innerHTML += `
+                        <div class="system-message">
+                            <strong>MEMORY:</strong> 640KB BASE | 384KB EXTENDED | 5 ACTIVE CHAT SESSIONS
+                        </div>
+                    `;
+                    messageInput.value = '';
+                }
+            }
+        });
+
+        // Enhanced real-time amber updates
+        setInterval(() => {
+            const amberMessages = [
+                'New message received from user2@retro.sys',
+                'CRT monitor phosphor refresh complete',
+                'Amber buffer at 67% capacity',
+                'DOS interrupt 21h called successfully',
+                'Retro modem connection established',
+                'Vintage protocol handshake completed'
+            ];
+            
+            if (Math.random() > 0.9) {
+                const systemMsg = document.createElement('div');
+                systemMsg.className = 'system-message';
+                systemMsg.innerHTML = `<strong>SYSTEM ALERT:</strong> ${amberMessages[Math.floor(Math.random() * amberMessages.length)]}`;
+                messageOutput.appendChild(systemMsg);
+                messageOutput.scrollTop = messageOutput.scrollHeight;
+                
+                setTimeout(() => {
+                    systemMsg.style.transition = 'all 0.6s ease';
+                    systemMsg.style.opacity = '0';
+                    systemMsg.style.transform = 'translateY(-20px)';
+                    setTimeout(() => systemMsg.remove(), 600);
+                }, 6000);
+            }
+        }, 8000);
+
+        // CRT flicker effects
+        setInterval(() => {
+            if (Math.random() > 0.98) {
+                document.body.style.filter = 'brightness(0.95)';
+                setTimeout(() => {
+                    document.body.style.filter = 'none';
+                }, 50);
+            }
+        }, 1000);
+
+        // Random amber character artifacts
+        setInterval(() => {
+            if (Math.random() > 0.94 && document.activeElement !== messageInput) {
+                const amberChar = '█▓▒░'[Math.floor(Math.random() * 4)];
+                const artifact = document.createElement('span');
+                artifact.textContent = amberChar;
+                artifact.style.position = 'fixed';
+                artifact.style.left = Math.random() * window.innerWidth + 'px';
+                artifact.style.top = Math.random() * window.innerHeight + 'px';
+                artifact.style.color = '#ffb000';
+                artifact.style.fontSize = '14px';
+                artifact.style.pointerEvents = 'none';
+                artifact.style.zIndex = '999';
+                artifact.style.textShadow = '0 0 5px #ffb000';
+                artifact.style.fontFamily = 'VT323, monospace';
+                document.body.appendChild(artifact);
+                
+                setTimeout(() => {
+                    artifact.style.transition = 'all 2s ease';
+                    artifact.style.opacity = '0';
+                    setTimeout(() => artifact.remove(), 2000);
+                }, 3000);
+            }
+        }, 2000);
+
+        // Amber typing sound simulation (visual feedback)
+        messageInput.addEventListener('keydown', () => {
+            messageInput.style.boxShadow = '0 0 30px rgba(255, 176, 0, 0.5)';
+            setTimeout(() => {
+                messageInput.style.boxShadow = '0 0 25px rgba(255, 176, 0, 0.4)';
+            }, 200);
+        });
+
+        // Simulate old computer warm-up
+        setTimeout(() => {
+            document.body.style.transition = 'all 2s ease';
+            document.body.style.filter = 'brightness(1.1) contrast(1.1)';
+            setTimeout(() => {
+                document.body.style.filter = 'none';
+            }, 2000);
+        }, 5000);
+
+        // Random CRT screen adjustments
+        setInterval(() => {
+            if (Math.random() > 0.97) {
+                document.body.style.transform = 'scaleX(0.999)';
+                setTimeout(() => {
+                    document.body.style.transform = 'none';
+                }, 100);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

@@ -4,19 +4,14 @@ import { Conversation, Message, UserStatus } from './types';
 import { notificationService } from './services/NotificationService';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Toaster } from '@/components/ui/toast';
-import { Menu, Bell, Settings, User, Wifi, WifiOff } from 'lucide-react';
+import { Menu, Minimize2, Maximize2, X } from 'lucide-react';
 
 // Vietnamese localization for admin interface
 const vietnameseTexts = {
- chatAdminDashboard: 'Bảng Điều Khiển Admin Chat',
+ chatAdminDashboard: 'SYSTEM ACCESS',
+ terminalTitle: 'CYBERPUNK ADMIN TERMINAL',
+ systemPrompt: 'admin@terminal',
  notificationsOn: 'Thông báo Bật',
  notificationsOff: 'Thông báo Tắt',
  enableNotifications: 'Bật Thông báo',
@@ -73,8 +68,6 @@ function App() {
  const [hasMoreMessages, setHasMoreMessages] = useState(true);
  const [messageOffset, setMessageOffset] = useState(0);
  const [isAutoScrolling, setIsAutoScrolling] = useState(false);
- const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
- const [showUnreadDropdown, setShowUnreadDropdown] = useState(false);
  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
  const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -236,9 +229,7 @@ function App() {
     setUnreadCount(prev => prev + 1);
    }
    
-   // Refresh unread messages list
-   fetchUnreadMessages();
-  });
+    });
 
   socket.on('new-admin-message', (message: Message) => {
 
@@ -378,30 +369,6 @@ function App() {
   }
  }, [token]);
 
- const fetchUnreadMessages = useCallback(async () => {
-  if (!token) {
-   console.warn('No token available for fetching unread messages');
-   return;
-  }
-  
-  try {
-   const response = await fetch(`${SERVER_URL}/api/unread-messages?limit=10`, {
-    headers: {
-     'Authorization': `Bearer ${token}`,
-     'Content-Type': 'application/json',
-    },
-   });
-   
-   if (response.ok) {
-    const data = await response.json();
-    setUnreadMessages(data);
-   } else {
-    console.error('Failed to fetch unread messages:', response.status, response.statusText);
-   }
-  } catch (error) {
-   console.error('Error fetching unread messages:', error);
-  }
- }, [token]);
 
  // Fetch conversations when token becomes available
  useEffect(() => {
@@ -410,14 +377,6 @@ function App() {
   }
  }, [token, fetchConversations]);
 
- // Fetch unread messages on component mount and periodically
- useEffect(() => {
-  if (token) {
-   fetchUnreadMessages();
-   const interval = setInterval(fetchUnreadMessages, 30000); // Refresh every 30 seconds
-   return () => clearInterval(interval);
-  }
- }, [token, fetchUnreadMessages]);
 
  // Initialize notifications
  const initializeNotifications = async () => {
@@ -671,18 +630,6 @@ function App() {
  };
 
 
- const formatDate = (timestamp: string | Date) => {
-  const date = new Date(timestamp);
-  return date.toLocaleDateString('en-US', {
-   timeZone: 'Asia/Bangkok'
-  });
- };
-
-
- const retryConnection = () => {
-  setConnectionError(null);
-  connectToServer();
- };
 
  const getConnectionStatus = () => {
   if (isReconnecting) return vietnameseTexts.reconnecting;
@@ -691,76 +638,15 @@ function App() {
   return vietnameseTexts.connecting;
  };
 
- const getMessageStatus = (message: Message) => {
-  if (message.sender_type === 'user') return null; // User messages don't show status
-  
-  if (message.read_at) {
-   return 'read'; // Double blue tick
-  } else if (message.delivered_at) {
-   return 'delivered'; // Double gray tick 
-  } else {
-   return 'sent'; // Single gray tick
-  }
- };
 
- const MessageStatusIndicator: React.FC<{ message: Message }> = ({ message }) => {
-  const status = getMessageStatus(message);
-  
-  if (!status) return null;
-  
-  const getStatusTooltip = (status: string) => {
-   switch (status) {
-    case 'sent': return vietnameseTexts.statusSent || 'Đã gửi';
-    case 'delivered': return vietnameseTexts.statusDelivered || 'Đã nhận';
-    case 'read': return vietnameseTexts.statusRead || 'Đã xem';
-    default: return '';
-   }
-  };
-  
-  const getStatusIcon = (status: string) => {
-   switch (status) {
-    case 'sent':
-     return (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-       <polyline points="20,6 9,17 4,12" />
-      </svg>
-     );
-    case 'delivered':
-     return (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-       <polyline points="20,6 9,17 4,12" />
-       <polyline points="24,6 13,17 8,12" strokeOpacity="0.6" />
-      </svg>
-     );
-    case 'read':
-     return (
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-       <polyline points="20,6 9,17 4,12" />
-       <polyline points="24,6 13,17 8,12" />
-      </svg>
-     );
-    default:
-     return null;
-   }
-  };
-  
-  return (
-   <span 
-    className={`message-status ${status}`}
-    title={getStatusTooltip(status)}
-   >
-    {getStatusIcon(status)}
-   </span>
-  );
- };
 
  const LoadMoreButton: React.FC = () => {
   if (!hasMoreMessages && messages.length > 0) {
    return (
     <div className="flex justify-center p-4" data-testid="no-more-messages">
-     <Badge variant="outline" className="text-muted-foreground">
+     <div className="text-muted-foreground text-sm border rounded px-3 py-1">
       {vietnameseTexts.noMoreMessages}
-     </Badge>
+     </div>
     </div>
    );
   }
@@ -786,488 +672,247 @@ function App() {
 
  const selectedConv = conversations.find(c => c.id === selectedConversation);
 
- // Mobile sidebar component
- const MobileSidebar = () => (
-  <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-   <SheetContent side="left" className="w-full p-0 glass-morphism" style={{maxWidth: '400px'}}>
-    <SheetHeader className="p-6 pb-4">
-     <SheetTitle className="text-left northern-text-glow">
-      {vietnameseTexts.chatAdminDashboard}
-     </SheetTitle>
-    </SheetHeader>
-    
-    {/* Broadcast Section */}
-    <div className="px-6 pb-4">
-     <Card className="glass-morphism border-primary/20">
-      <CardHeader className="pb-3">
-       <CardTitle className="text-sm font-medium">{vietnameseTexts.broadcastMessage}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-       <Textarea
-        value={broadcastMessage}
-        onChange={(e) => setBroadcastMessage(e.target.value)}
-        placeholder={vietnameseTexts.broadcastPlaceholder}
-        rows={2}
-        data-testid="broadcast-input"
-        className="resize-none text-sm glass-morphism"
-       />
-       <Button 
-        onClick={sendBroadcast}
-        disabled={!broadcastMessage.trim() || !isConnected}
-        className="w-full touch-target bg-primary text-primary-foreground"
-        data-testid="broadcast-button"
-        size="sm"
-       >
-        {vietnameseTexts.broadcast}
-       </Button>
-      </CardContent>
-     </Card>
+ // Cyberpunk Conversation Drawer
+ const ConversationDrawer = () => (
+  <>
+   {/* Backdrop */}
+   <div 
+    className={`cyberpunk-backdrop ${isMobileSidebarOpen ? 'active' : ''}`} 
+    onClick={() => setIsMobileSidebarOpen(false)}
+   />
+   
+   {/* Drawer */}
+   <div className={`cyberpunk-drawer ${isMobileSidebarOpen ? 'open' : ''} cyberpunk-scroll`}>
+    {/* Close Button */}
+    <button 
+     className="cyberpunk-drawer-close"
+     onClick={() => setIsMobileSidebarOpen(false)}
+     aria-label="Close"
+    >
+     <X className="w-6 h-6" />
+    </button>
+
+    {/* Terminal Prompt */}
+    <div className="cyberpunk-prompt">
+     <span className="cyberpunk-prompt-symbol">▸</span>
+     <span className="cyberpunk-prompt-path">{vietnameseTexts.systemPrompt}:/conversations</span>
     </div>
 
-    {/* Conversations */}
-    <div className="flex-1 px-6">
-     <div className="flex items-center justify-between mb-4">
-      <h3 className="text-sm font-medium">{vietnameseTexts.conversations} ({conversations.length})</h3>
-      <Button 
-       variant="ghost"
-       size="sm"
-       onClick={fetchConversations}
-       className="touch-target"
-      >
-       🔄
-      </Button>
-     </div>
-     
-     <ScrollArea className="h-96">
-      <div className="space-y-2" data-testid="conversations-list">
-       {conversations.map((conversation) => {
-        const userStatus = onlineUsers.get(conversation.user_email);
-        const isSelected = selectedConversation === conversation.id;
-        const hasUnread = conversation.latest_message && 
-         conversation.latest_message.sender_type === 'user' && 
-         selectedConversation !== conversation.id;
-        
-        return (
-         <div
-          key={conversation.id}
-          className={`
-           cursor-pointer rounded-lg border p-3 transition-all hover:bg-accent/50 touch-target            ${isSelected ? 'bg-primary/20 border-primary ' : 'border-border/50'}
-           ${hasUnread ? 'bg-accent/30' : ''}
-          `}
-          onClick={() => {
-           selectConversation(conversation.id);
-           setIsMobileSidebarOpen(false);
-          }}
-          data-testid={`conversation-${conversation.user_email}`}
-         >
-          <div className="flex items-center gap-3 mb-2">
-           <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
-             {conversation.user_email.charAt(0).toUpperCase()}
-            </AvatarFallback>
-           </Avatar>
-           <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm truncate">{conversation.user_email}</p>
-            <div className="flex items-center gap-1">
-             <div className={`w-2 h-2 rounded-full ${userStatus?.isOnline ? 'bg-green-400' : 'bg-gray-400'}`} />
-             <span className={`text-xs ${userStatus?.isOnline ? 'text-green-600' : 'text-muted-foreground'}`}>
-              {userStatus?.isOnline ? vietnameseTexts.online : vietnameseTexts.offline}
-             </span>
-            </div>
-           </div>
-           {hasUnread && (
-            <Badge variant="destructive" className="h-2 w-2 p-0 rounded-full animate-pulse" />
-           )}
-          </div>
-          {conversation.latest_message && (
-           <div className="flex justify-between items-end text-xs text-muted-foreground">
-            <span className="truncate flex-1 mr-2">
-             {conversation.latest_message.sender_type === 'admin' ? `${vietnameseTexts.admin}: ` : ''}
-             {conversation.latest_message.content.substring(0, 40)}
-             {conversation.latest_message.content.length > 40 ? '...' : ''}
-            </span>
-            <span className="whitespace-nowrap">
-             {formatTime(conversation.latest_message.created_at)}
-            </span>
-           </div>
-          )}
-         </div>
-        );
-       })}
-      </div>
-     </ScrollArea>
+    {/* Conversation List */}
+    <div className="cyberpunk-conversation-list" data-testid="conversations-list">
+     {conversations.map((conversation) => {
+      const userStatus = onlineUsers.get(conversation.user_email);
+      const isSelected = selectedConversation === conversation.id;
+      const hasUnread = conversation.latest_message && 
+       conversation.latest_message.sender_type === 'user' && 
+       selectedConversation !== conversation.id;
+      
+      return (
+       <div
+        key={conversation.id}
+        className={`cyberpunk-conversation-entry ${
+         isSelected ? 'active' : ''
+        } ${
+         userStatus?.isOnline ? 'online' : 'offline'
+        }`}
+        onClick={() => {
+         selectConversation(conversation.id);
+         setIsMobileSidebarOpen(false);
+        }}
+        data-testid={`conversation-${conversation.user_email}`}
+       >
+        <div className="cyberpunk-file-icon">📁</div>
+        <div className="cyberpunk-user-name">{conversation.user_email}</div>
+        {hasUnread && (
+         <div className="cyberpunk-unread-count">!</div>
+        )}
+       </div>
+      );
+     })}
     </div>
-   </SheetContent>
-  </Sheet>
+   </div>
+  </>
  );
 
  return (
-  <div className="min-h-screen bg-background" data-testid="admin-app">
+  <div className="cyberpunk-body cyberpunk-background" data-testid="admin-app">
    <Toaster />
    
-   {/* Mobile-First Header */}
-   <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-    <div className="mobile-container flex h-16 items-center justify-between">
-     {/* Left side - Logo and hamburger */}
-     <div className="flex items-center gap-4">
-      <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden touch-target">
-         <Menu className="h-5 w-5" />
-        </Button>
-       </SheetTrigger>
-      </Sheet>
-      
-      <h1 className="text-lg sm:text-xl font-bold northern-text-glow hidden sm:block">
-       {vietnameseTexts.chatAdminDashboard}
-      </h1>
-      <h1 className="text-base font-bold northern-text-glow sm:hidden">
-       Admin Chat
-      </h1>
-     </div>
+   {/* Terminal Header */}
+   <header className="cyberpunk-header">
+    {/* Menu Toggle Button */}
+    <Button 
+     variant="ghost" 
+     size="icon" 
+     className="cyberpunk-menu-toggle"
+     onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+     data-testid="menu-toggle"
+    >
+     <Menu className="w-6 h-6" />
+    </Button>
 
-     {/* Right side - Actions */}
-     <div className="flex items-center gap-2">
-      {/* Notifications Badge */}
-      <Badge variant={notificationsEnabled ? "default" : "secondary"} className="hidden sm:flex gap-1 text-xs glass-morphism">
-       {notificationsEnabled ? <Bell className="h-3 w-3" /> : '🔕'} 
-       <span className="hidden md:inline">
-        {notificationsEnabled ? vietnameseTexts.notificationsOn : vietnameseTexts.notificationsOff}
-       </span>
-      </Badge>
+    {/* Terminal Tabs */}
+    <div className="cyberpunk-tabs">
+     <div className="cyberpunk-tab active">{vietnameseTexts.terminalTitle}</div>
+    </div>
 
-      {/* Unread Messages */}
-      <DropdownMenu open={showUnreadDropdown} onOpenChange={setShowUnreadDropdown}>
-       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className={`relative touch-target ${unreadCount > 0 ? 'animate-pulse' : ''}`}>
-         <Bell className="h-4 w-4" />
-         {unreadCount > 0 && (
-          <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center">
-           {unreadCount > 99 ? '99+' : unreadCount}
-          </Badge>
-         )}
-        </Button>
-       </DropdownMenuTrigger>
-       <DropdownMenuContent align="end" className="glass-morphism " style={{width: '20rem'}}>
-        <div className="p-4 border-b">
-         <h4 className="font-medium">{vietnameseTexts.unreadMessages} ({unreadMessages.length})</h4>
-        </div>
-        <ScrollArea className="max-h-64" style={{maxHeight: '16rem'}}>
-         {unreadMessages.length === 0 ? (
-          <div className="p-4 text-center text-muted-foreground text-sm">
-           {vietnameseTexts.noUnreadMessages}
-          </div>
-         ) : (
-          unreadMessages.map((msg, index) => (
-           <DropdownMenuItem
-            key={msg.id || index}
-            className="p-4 cursor-pointer touch-target"
-            onClick={() => {
-             selectConversation(msg.conversation_id);
-             setShowUnreadDropdown(false);
-            }}
-           >
-            <div className="w-full">
-             <div className="flex justify-between items-center mb-1">
-              <span className="font-medium text-sm">{msg.user_email}</span>
-              <span className="text-xs text-muted-foreground">{formatTime(msg.created_at)}</span>
-             </div>
-             <p className="text-sm text-muted-foreground line-clamp-2">
-              {msg.content.substring(0, 60)}
-              {msg.content.length > 60 ? '...' : ''}
-             </p>
-            </div>
-           </DropdownMenuItem>
-          ))
-         )}
-        </ScrollArea>
-       </DropdownMenuContent>
-      </DropdownMenu>
-
-      {/* Connection Status */}
-      <Badge 
-       variant={isConnected ? "default" : connectionError ? "destructive" : "secondary"}
-       className="gap-1 text-xs glass-morphism"
-      >
-       {isConnected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
-       <span className="hidden sm:inline">{getConnectionStatus()}</span>
-      </Badge>
-
-      {/* Settings */}
-      <DropdownMenu>
-       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="touch-target">
-         <Settings className="h-4 w-4" />
-        </Button>
-       </DropdownMenuTrigger>
-       <DropdownMenuContent align="end" className="glass-morphism ">
-        {!notificationsEnabled && (
-         <DropdownMenuItem
-          onClick={async () => {
-           const granted = await notificationService.requestPermission();
-           setNotificationsEnabled(granted);
-          }}
-          className="touch-target"
-         >
-          <Bell className="h-4 w-4 mr-2" />
-          {vietnameseTexts.enableNotifications}
-         </DropdownMenuItem>
-        )}
-        {connectionError && (
-         <DropdownMenuItem onClick={retryConnection} className="touch-target">
-          <Wifi className="h-4 w-4 mr-2" />
-          {vietnameseTexts.retry}
-         </DropdownMenuItem>
-        )}
-       </DropdownMenuContent>
-      </DropdownMenu>
-     </div>
+    {/* Terminal Controls */}
+    <div className="cyberpunk-controls">
+     <button className="cyberpunk-control minimize" aria-label="Minimize">
+      <Minimize2 className="w-3 h-3" />
+     </button>
+     <button className="cyberpunk-control maximize" aria-label="Maximize">
+      <Maximize2 className="w-3 h-3" />
+     </button>
+     <button className="cyberpunk-control close" aria-label="Close">
+      <X className="w-3 h-3" />
+     </button>
     </div>
    </header>
 
-   <MobileSidebar />
+   <ConversationDrawer />
 
-   {/* Main Content */}
-   <div className="flex" style={{height: 'calc(100vh - 4rem)'}}>
-    {/* Desktop Sidebar */}
-    <aside className="hidden lg:flex border-r bg-sidebar/50 glass-morphism" style={{width: '24rem'}}>
-     <div className="flex flex-col w-full">
-      {/* Broadcast Section */}
-      <div className="p-6">
-       <Card className="glass-morphism border-primary/20">
-        <CardHeader>
-         <CardTitle className="text-lg">{vietnameseTexts.broadcastMessage}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-         <Textarea
-          value={broadcastMessage}
-          onChange={(e) => setBroadcastMessage(e.target.value)}
-          placeholder={vietnameseTexts.broadcastPlaceholder}
-          rows={3}
-          data-testid="broadcast-input"
-          className="resize-none glass-morphism"
-         />
-         <Button 
-          onClick={sendBroadcast}
-          disabled={!broadcastMessage.trim() || !isConnected}
-          className="w-full bg-primary text-primary-foreground"
-          data-testid="broadcast-button"
-         >
-          {vietnameseTexts.broadcast}
-         </Button>
-        </CardContent>
-       </Card>
-      </div>
-
-      {/* Conversations */}
-      <div className="flex-1 px-6">
-       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-medium">{vietnameseTexts.conversations} ({conversations.length})</h3>
-        <Button 
-         variant="ghost"
-         size="icon"
-         onClick={fetchConversations}
-         title="Refresh conversations"
-        >
-         🔄
-        </Button>
-       </div>
-       
-       <ScrollArea className="h-96">
-        <div className="space-y-2" data-testid="conversations-list">
-         {conversations.map((conversation) => {
-          const userStatus = onlineUsers.get(conversation.user_email);
-          const isSelected = selectedConversation === conversation.id;
-          const hasUnread = conversation.latest_message && 
-           conversation.latest_message.sender_type === 'user' && 
-           selectedConversation !== conversation.id;
-          
-          return (
-           <div
-            key={conversation.id}
-            className={`
-             cursor-pointer rounded-lg border p-4 transition-all hover:bg-accent/50              ${isSelected ? 'bg-primary/20 border-primary ' : 'border-border/50'}
-             ${hasUnread ? 'bg-accent/30' : ''}
-            `}
-            onClick={() => selectConversation(conversation.id)}
-            data-testid={`conversation-${conversation.user_email}`}
-           >
-            <div className="flex items-center gap-3 mb-2">
-             <Avatar className="h-10 w-10">
-              <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
-               {conversation.user_email.charAt(0).toUpperCase()}
-              </AvatarFallback>
-             </Avatar>
-             <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{conversation.user_email}</p>
-              <div className="flex items-center gap-1">
-               <div className={`w-2 h-2 rounded-full ${userStatus?.isOnline ? 'bg-green-400' : 'bg-gray-400'}`} />
-               <span className={`text-xs ${userStatus?.isOnline ? 'text-green-600' : 'text-muted-foreground'}`}>
-                {userStatus?.isOnline ? vietnameseTexts.online : vietnameseTexts.offline}
-               </span>
-              </div>
-             </div>
-             {hasUnread && (
-              <Badge variant="destructive" className="h-2 w-2 p-0 rounded-full animate-pulse" />
-             )}
-            </div>
-            {conversation.latest_message && (
-             <div className="flex justify-between items-end text-xs text-muted-foreground">
-              <span className="truncate flex-1 mr-2">
-               {conversation.latest_message.sender_type === 'admin' ? `${vietnameseTexts.admin}: ` : ''}
-               {conversation.latest_message.content.substring(0, 50)}
-               {conversation.latest_message.content.length > 50 ? '...' : ''}
-              </span>
-              <span className="whitespace-nowrap">
-               {formatTime(conversation.latest_message.created_at)}
-              </span>
-             </div>
-            )}
-           </div>
-          );
-         })}
-        </div>
-       </ScrollArea>
-      </div>
-     </div>
-    </aside>
-
-    {/* Chat Area */}
-    <main className="flex-1 flex flex-col">
+   {/* Main Terminal Workspace */}
+   <div className="cyberpunk-terminal-workspace" style={{height: 'calc(100dvh - clamp(35px, 8vh, 45px))'}}>
+    <div className="cyberpunk-chat-terminal">
      {selectedConversation ? (
       <>
        {/* Chat Header */}
-       <div className="border-b bg-background/50 p-4 glass-morphism">
-        <div className="flex items-center gap-4">
-         <Avatar className="h-12 w-12">
-          <AvatarFallback className="bg-primary text-primary-foreground text-lg font-bold">
-           {selectedConv?.user_email.charAt(0).toUpperCase()}
-          </AvatarFallback>
-         </Avatar>
-         <div className="flex-1 min-w-0">
-          <h2 className="text-lg sm:text-xl font-semibold truncate">{selectedConv?.user_email}</h2>
-          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-           {onlineUsers.get(selectedConv?.user_email || '')?.isOnline ? (
-            <>
-             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-             <span className="text-green-600">{vietnameseTexts.online}</span>
-            </>
-           ) : (
-            <span>{vietnameseTexts.started}: {selectedConv && formatDate(selectedConv.created_at)}</span>
-           )}
-          </div>
-         </div>
-         <div className="flex gap-2">
-          <Button variant="ghost" size="icon" title={vietnameseTexts.userInfo} className="touch-target">
-           <User className="h-4 w-4" />
-          </Button>
-         </div>
+       <div className="cyberpunk-chat-header">
+        <div className="cyberpunk-terminal-title">
+         {selectedConv?.user_email || 'SYSTEM TERMINAL'}
+        </div>
+        <div className="cyberpunk-connection-status">
+         {getConnectionStatus()}
         </div>
        </div>
 
-       {/* Messages */}
-       <ScrollArea 
-        className="flex-1 p-4"
+       {/* Message Output */}
+       <div 
+        className="cyberpunk-message-output cyberpunk-scroll"
         ref={messagesContainerRef}
         onScroll={handleMessagesScroll}
+        data-testid="admin-messages"
        >
-        <div className="space-y-4 max-w-4xl mx-auto" data-testid="admin-messages">
-         <LoadMoreButton />
-         
-         {messages.map((message) => {
-          const isAdmin = message.sender_type === 'admin';
-          return (
-           <div
-            key={message.id}
-            className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}
-            data-testid={`admin-message-${message.sender_type}`}
-           >
-            <div className={`
-             max-w-[85%] sm:max-w-[80%] rounded-lg p-3 space-y-1              ${isAdmin 
-              ? 'bg-primary text-primary-foreground ml-8 sm:ml-12' 
-              : 'bg-muted/80 mr-8 sm:mr-12'
-             }
-            `}>
-             <div className="mobile-text">{message.content}</div>
-             <div className="flex items-center justify-between gap-2 text-xs opacity-70">
-              <span>
-               {isAdmin ? vietnameseTexts.admin : selectedConv?.user_email}
-              </span>
-              <div className="flex items-center gap-1">
-               <span>{formatTime(message.created_at)}</span>
-               <MessageStatusIndicator message={message} />
-              </div>
-             </div>
-            </div>
+        <LoadMoreButton />
+        
+        {messages.map((message) => {
+         const isAdmin = message.sender_type === 'admin';
+         return (
+          <div
+           key={message.id}
+           className={`cyberpunk-log-entry ${isAdmin ? 'admin' : 'user'} cyberpunk-selectable`}
+           data-testid={`admin-message-${message.sender_type}`}
+          >
+           <div className="cyberpunk-timestamp">
+            {formatTime(message.created_at)}
            </div>
-          );
-         })}
-         
-         {typingUsers.size > 0 && (
-          <div className="flex justify-start">
-           <div className="bg-muted/80 rounded-lg p-3 max-w-[200px] glass-morphism">
-            <div className="flex items-center gap-2">
-             <div className="flex gap-1">
-              <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-1 h-1 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-             </div>
-             <span className="text-xs text-muted-foreground">
-              {Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? vietnameseTexts.isTyping : vietnameseTexts.areTyping}...
-             </span>
-            </div>
+           <div className="cyberpunk-sender">
+            {isAdmin ? 'ADMIN' : 'USER'}
+           </div>
+           <div className="cyberpunk-content">
+            {message.content}
            </div>
           </div>
-         )}
-         <div ref={messagesEndRef} />
-        </div>
-       </ScrollArea>
-
-       {/* Message Input */}
-       <div className="border-t bg-background/50 p-4 glass-morphism">
-        <div className="flex gap-2 sm:gap-4 items-end max-w-4xl mx-auto">
-         <div className="flex-1">
-          <Textarea
-           value={newMessage}
-           onChange={(e) => handleTyping(e.target.value)}
-           onKeyPress={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-             e.preventDefault();
-             sendMessage();
-            }
-           }}
-           placeholder={vietnameseTexts.typeReply}
-           rows={2}
-           data-testid="admin-message-input"
-           className="resize-none glass-morphism touch-target"
-          />
+         );
+        })}
+        
+        {typingUsers.size > 0 && (
+         <div className="cyberpunk-log-entry user">
+          <div className="cyberpunk-timestamp">{formatTime(new Date())}</div>
+          <div className="cyberpunk-sender">USER</div>
+          <div className="cyberpunk-content cyberpunk-loading-dots">
+           {Array.from(typingUsers).join(', ')} {typingUsers.size === 1 ? vietnameseTexts.isTyping : vietnameseTexts.areTyping}
+          </div>
          </div>
-         <Button
-          onClick={sendMessage}
-          disabled={!newMessage.trim() || !isConnected}
-          data-testid="admin-send-button"
-          className="px-4 sm:px-6 bg-primary text-primary-foreground touch-target"
-         >
-          {vietnameseTexts.send}
-         </Button>
+        )}
+        <div ref={messagesEndRef} />
+       </div>
+
+       {/* Command Input */}
+       <div className="cyberpunk-command-input">
+        <div className="cyberpunk-input-prompt">
+         {vietnameseTexts.systemPrompt}▸
         </div>
+        <input
+         type="text"
+         value={newMessage}
+         onChange={(e) => handleTyping(e.target.value)}
+         onKeyPress={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+           e.preventDefault();
+           sendMessage();
+          }
+         }}
+         placeholder={vietnameseTexts.typeReply}
+         data-testid="admin-message-input"
+         className="cyberpunk-terminal-input"
+         disabled={!isConnected}
+        />
+        <button
+         onClick={sendMessage}
+         disabled={!newMessage.trim() || !isConnected}
+         data-testid="admin-send-button"
+         className="cyberpunk-send-button"
+        >
+         SEND
+        </button>
        </div>
       </>
      ) : (
-      <div className="flex flex-col items-center justify-center h-full text-center p-8 glass-morphism">
-       <div className="text-6xl mb-4">💬</div>
-       <h2 className="text-xl font-semibold mb-2 northern-text-glow">{vietnameseTexts.selectConversation}</h2>
-       <p className="text-muted-foreground max-w-md mobile-text">{vietnameseTexts.selectConversationDesc}</p>
-       <Button 
-        onClick={() => setIsMobileSidebarOpen(true)}
-        className="mt-4 lg:hidden bg-primary text-primary-foreground touch-target"
-       >
-        <Menu className="h-4 w-4 mr-2" />
-        {vietnameseTexts.conversations}
-       </Button>
-      </div>
+      <>
+       {/* Chat Header */}
+       <div className="cyberpunk-chat-header">
+        <div className="cyberpunk-terminal-title">
+         {vietnameseTexts.terminalTitle}
+        </div>
+        <div className="cyberpunk-connection-status">
+         {getConnectionStatus()}
+        </div>
+       </div>
+
+       {/* Default Terminal View */}
+       <div className="cyberpunk-message-output cyberpunk-scroll">
+        <div className="cyberpunk-system-message">
+         SYSTEM READY - {conversations.length} ACTIVE CONNECTIONS
+        </div>
+        <div className="cyberpunk-system-message">
+         SELECT CONVERSATION TO BEGIN COMMUNICATION
+        </div>
+       </div>
+
+       {/* Broadcast Input */}
+       <div className="cyberpunk-command-input">
+        <div className="cyberpunk-input-prompt">
+         BROADCAST▸
+        </div>
+        <input
+         type="text"
+         value={broadcastMessage}
+         onChange={(e) => setBroadcastMessage(e.target.value)}
+         onKeyPress={(e) => {
+          if (e.key === 'Enter') {
+           e.preventDefault();
+           sendBroadcast();
+          }
+         }}
+         placeholder={vietnameseTexts.broadcastPlaceholder}
+         data-testid="broadcast-input"
+         className="cyberpunk-terminal-input"
+         disabled={!isConnected}
+        />
+        <button
+         onClick={sendBroadcast}
+         disabled={!broadcastMessage.trim() || !isConnected}
+         data-testid="broadcast-button"
+         className="cyberpunk-send-button"
+        >
+         BROADCAST
+        </button>
+       </div>
+      </>
      )}
-    </main>
+    </div>
    </div>
   </div>
  );

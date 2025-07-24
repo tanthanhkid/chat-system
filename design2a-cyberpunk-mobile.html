@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Design 2A Mobile: Cyberpunk Neon Terminal - Admin Chat Interface</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono:wght@400&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ffff;
+            min-height: 100vh;
+            min-height: 100dvh; /* Dynamic viewport height for mobile */
+            overflow: hidden;
+            font-size: clamp(12px, 2.5vw, 14px);
+            line-height: 1.6;
+            position: relative;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        /* Allow text selection in message content */
+        .content, .terminal-input {
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        /* Cyberpunk Background Effects - Mobile Optimized */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 0, 255, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 40% 80%, rgba(255, 20, 147, 0.08) 0%, transparent 60%);
+            animation: cyberpunk-glow 10s ease-in-out infinite alternate;
+            z-index: -2;
+            will-change: opacity;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 255, 255, 0.02) 2px,
+                rgba(0, 255, 255, 0.02) 4px
+            );
+            pointer-events: none;
+            z-index: 1000;
+            animation: scanlines 0.15s linear infinite;
+            will-change: transform;
+        }
+
+        /* Mobile-First Terminal Header */
+        .terminal-header {
+            background: linear-gradient(90deg, #1a0026, #26004d, #1a0026);
+            height: clamp(35px, 8vh, 45px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 clamp(10px, 3vw, 20px);
+            border-bottom: 2px solid #ff00ff;
+            box-shadow: 
+                0 0 15px rgba(255, 0, 255, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            position: relative;
+            z-index: 100;
+        }
+
+        .terminal-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(255, 0, 255, 0.1) 50%, 
+                transparent 100%);
+            animation: neon-sweep 4s ease-in-out infinite;
+            will-change: transform;
+        }
+
+        /* Menu Toggle (for both mobile and desktop) */
+        .mobile-menu-toggle {
+            display: block;
+            background: none;
+            border: none;
+            color: #ff00ff;
+            font-size: clamp(18px, 4vw, 24px);
+            cursor: pointer;
+            padding: 8px;
+            z-index: 2;
+            text-shadow: 0 0 10px #ff00ff;
+            transition: all 0.3s ease;
+            touch-action: manipulation;
+        }
+
+        .mobile-menu-toggle:hover {
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+            transform: scale(1.1);
+        }
+
+        .mobile-menu-toggle:active {
+            transform: scale(0.95);
+        }
+
+        .terminal-tabs {
+            display: flex;
+            gap: clamp(8px, 2vw, 15px);
+            z-index: 2;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .tab {
+            background: linear-gradient(135deg, #330066, #660033);
+            padding: clamp(6px, 1.5vw, 8px) clamp(8px, 3vw, 16px);
+            border-radius: 6px 6px 0 0;
+            font-size: clamp(10px, 2vw, 12px);
+            color: #ff00ff;
+            position: relative;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid #ff00ff;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 60vw;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #ff00ff, #00ffff);
+            color: #000;
+            box-shadow: 
+                0 0 15px rgba(255, 0, 255, 0.8),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            animation: neon-pulse 2.5s ease-in-out infinite alternate;
+        }
+
+        .terminal-controls {
+            display: flex;
+            gap: clamp(6px, 1.5vw, 10px);
+            z-index: 2;
+        }
+
+        .control {
+            width: clamp(12px, 3vw, 16px);
+            height: clamp(12px, 3vw, 16px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(8px, 2vw, 10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Orbitron', monospace;
+            font-weight: 900;
+            touch-action: manipulation;
+        }
+
+        .control.minimize { 
+            background: linear-gradient(135deg, #ffff00, #ff8c00);
+            color: #000;
+            box-shadow: 0 0 8px rgba(255, 255, 0, 0.6);
+        }
+        .control.maximize { 
+            background: linear-gradient(135deg, #00ff41, #32cd32);
+            color: #000;
+            box-shadow: 0 0 8px rgba(0, 255, 65, 0.6);
+        }
+        .control.close { 
+            background: linear-gradient(135deg, #ff0080, #ff4500);
+            color: #fff;
+            box-shadow: 0 0 8px rgba(255, 0, 128, 0.6);
+        }
+
+        .control:active {
+            transform: scale(0.9);
+        }
+
+        /* Mobile-First Terminal Workspace */
+        .terminal-workspace {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - clamp(35px, 8vh, 45px));
+            height: calc(100dvh - clamp(35px, 8vh, 45px));
+            position: relative;
+        }
+
+        /* Conversation Drawer (responsive for mobile and desktop) */
+        .conversation-drawer {
+            position: fixed;
+            top: clamp(35px, 8vh, 45px);
+            left: -100%;
+            width: min(85vw, 380px);
+            height: calc(100vh - clamp(35px, 8vh, 45px));
+            height: calc(100dvh - clamp(35px, 8vh, 45px));
+            background: linear-gradient(180deg, #0f001a, #1a0033, #0f001a);
+            border-right: 2px solid #00ffff;
+            padding: clamp(15px, 4vw, 25px);
+            overflow-y: auto;
+            z-index: 90;
+            transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.8);
+        }
+
+        .conversation-drawer.open {
+            left: 0;
+        }
+
+        /* Desktop drawer adjustments */
+        @media (min-width: 769px) {
+            .conversation-drawer {
+                left: -400px;
+                width: 380px;
+            }
+            
+            .conversation-drawer.open {
+                left: 0;
+            }
+        }
+
+        .conversation-drawer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 20px,
+                    rgba(0, 255, 255, 0.03) 20px,
+                    rgba(0, 255, 255, 0.03) 40px
+                );
+            pointer-events: none;
+        }
+
+        /* Backdrop for drawer */
+        .drawer-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 85;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .drawer-backdrop.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Desktop backdrop - lighter for better UX */
+        @media (min-width: 769px) {
+            .drawer-backdrop {
+                background: rgba(0, 0, 0, 0.4);
+                backdrop-filter: blur(3px);
+            }
+        }
+
+        .drawer-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #ff00ff;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 2;
+            padding: 8px;
+            text-shadow: 0 0 10px #ff00ff;
+            transition: all 0.3s ease;
+        }
+
+        .drawer-close:hover {
+            color: #00ffff;
+            text-shadow: 0 0 15px #00ffff;
+            transform: scale(1.1);
+        }
+
+        .terminal-prompt {
+            margin-bottom: clamp(15px, 4vw, 20px);
+            display: flex;
+            align-items: center;
+            gap: clamp(8px, 2vw, 10px);
+            z-index: 2;
+            position: relative;
+        }
+
+        .prompt-symbol {
+            color: #ff00ff;
+            font-weight: bold;
+            font-size: clamp(16px, 4vw, 18px);
+            text-shadow: 0 0 10px #ff00ff;
+            animation: neon-flicker 0.5s ease-in-out infinite alternate;
+        }
+
+        .command-path {
+            color: #00ffff;
+            font-size: clamp(12px, 3vw, 14px);
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 10px #00ffff;
+            word-break: break-all;
+        }
+
+        .conversation-list {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(10px, 2.5vw, 12px);
+            z-index: 2;
+            position: relative;
+            margin-bottom: clamp(15px, 4vw, 20px);
+        }
+
+        .conversation-entry {
+            display: flex;
+            align-items: center;
+            gap: clamp(10px, 2.5vw, 12px);
+            padding: clamp(12px, 3vw, 15px);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 255, 255, 0.1));
+            position: relative;
+            overflow: hidden;
+            touch-action: manipulation;
+            min-height: 48px; /* Minimum touch target */
+        }
+
+        .conversation-entry::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.1), 
+                transparent);
+            transition: left 0.5s ease;
+        }
+
+        .conversation-entry:active::before {
+            left: 100%;
+        }
+
+        .conversation-entry:active {
+            background: linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+            border-color: #ff00ff;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
+            transform: scale(0.98);
+        }
+
+        .conversation-entry.active {
+            background: linear-gradient(135deg, #ff00ff, #00ffff);
+            color: #000;
+            border-color: #fff;
+            box-shadow: 
+                0 0 25px rgba(255, 0, 255, 0.6),
+                inset 0 0 15px rgba(255, 255, 255, 0.2);
+            animation: cyberpunk-active 2s ease-in-out infinite alternate;
+        }
+
+        .conversation-entry.active .unread-count {
+            background: #000;
+            color: #ff00ff;
+            box-shadow: 0 0 8px #ff00ff;
+        }
+
+        .file-icon {
+            font-size: clamp(16px, 4vw, 20px);
+            filter: drop-shadow(0 0 3px currentColor);
+            flex-shrink: 0;
+        }
+
+        .user-name {
+            flex: 1;
+            font-size: clamp(11px, 2.8vw, 13px);
+            font-weight: 500;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            word-break: break-all;
+            line-height: 1.3;
+        }
+
+        .unread-count {
+            background: linear-gradient(135deg, #ff00ff, #ff0080);
+            color: #fff;
+            padding: clamp(3px, 1vw, 4px) clamp(6px, 1.5vw, 8px);
+            border-radius: 4px;
+            font-size: clamp(9px, 2.2vw, 11px);
+            font-weight: bold;
+            font-family: 'Orbitron', monospace;
+            box-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
+            animation: neon-pulse 1.5s ease-in-out infinite alternate;
+            flex-shrink: 0;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .conversation-entry.online::before {
+            content: '●';
+            color: #00ff41;
+            margin-right: 6px;
+            font-size: clamp(12px, 3vw, 16px);
+            animation: cyberpunk-online 2s infinite;
+            text-shadow: 0 0 8px #00ff41;
+        }
+
+        .conversation-entry.offline::before {
+            content: '●';
+            color: #666;
+            margin-right: 6px;
+            font-size: clamp(12px, 3vw, 16px);
+        }
+
+        /* Main Chat Terminal - Mobile First */
+        .chat-terminal {
+            flex: 1;
+            background: linear-gradient(180deg, #001122, #000033, #001122);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .chat-terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 30% 40%, rgba(255, 0, 255, 0.08) 0%, transparent 60%),
+                radial-gradient(circle at 70% 80%, rgba(0, 255, 255, 0.08) 0%, transparent 60%);
+            pointer-events: none;
+            animation: cyberpunk-background 12s ease-in-out infinite alternate;
+            will-change: opacity;
+        }
+
+        .chat-header {
+            background: linear-gradient(90deg, #1a0033, #330066, #1a0033);
+            padding: clamp(15px, 4vw, 20px);
+            border-bottom: 2px solid #00ffff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2;
+            position: relative;
+            min-height: 60px;
+            gap: 10px;
+        }
+
+        .terminal-title {
+            color: #00ffff;
+            font-weight: 700;
+            font-size: clamp(12px, 3vw, 16px);
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 12px #00ffff;
+            word-break: break-all;
+            line-height: 1.3;
+            flex: 1;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: clamp(6px, 1.5vw, 8px);
+            font-size: clamp(10px, 2.5vw, 12px);
+            color: #00ff41;
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 8px #00ff41;
+            flex-shrink: 0;
+        }
+
+        .connection-status::before {
+            content: '●';
+            animation: cyberpunk-connection 1.5s infinite;
+            font-size: clamp(10px, 2.5vw, 14px);
+        }
+
+        /* Mobile-Optimized Message Output */
+        .message-output {
+            flex: 1;
+            padding: clamp(15px, 4vw, 25px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: clamp(12px, 3vw, 15px);
+            font-family: 'Share Tech Mono', monospace;
+            z-index: 2;
+            position: relative;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: clamp(8px, 2vw, 12px);
+            padding: clamp(8px, 2vw, 12px) 0;
+            border-left: 3px solid transparent;
+            padding-left: clamp(15px, 4vw, 20px);
+            transition: all 0.3s ease;
+            position: relative;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .log-entry::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 0, 255, 0.2), transparent);
+            transition: width 0.3s ease;
+        }
+
+        .log-entry:active::before {
+            width: 100%;
+        }
+
+        .log-entry:active {
+            background: rgba(255, 0, 255, 0.05);
+            border-left-color: #ff00ff;
+        }
+
+        .log-entry.user {
+            border-left-color: #00ff41;
+        }
+
+        .log-entry.admin {
+            border-left-color: #00ffff;
+        }
+
+        .timestamp {
+            color: #ff0080;
+            font-size: clamp(9px, 2.2vw, 11px);
+            min-width: clamp(70px, 18vw, 90px);
+            font-weight: 400;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 3px #ff0080;
+            flex-shrink: 0;
+            line-height: 1.4;
+        }
+
+        .sender {
+            color: #00ffff;
+            font-weight: 700;
+            min-width: clamp(50px, 12vw, 70px);
+            font-family: 'Orbitron', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 8px #00ffff;
+            flex-shrink: 0;
+            font-size: clamp(10px, 2.5vw, 12px);
+        }
+
+        .log-entry.user .sender {
+            color: #00ff41;
+            text-shadow: 0 0 8px #00ff41;
+        }
+
+        .content {
+            color: #ffffff;
+            flex: 1;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            text-shadow: 0 0 3px rgba(255, 255, 255, 0.3);
+            font-size: clamp(11px, 2.8vw, 14px);
+            line-height: 1.5;
+        }
+
+        /* Mobile-Optimized Command Input */
+        .command-input {
+            background: linear-gradient(90deg, #1a0033, #330066, #1a0033);
+            padding: clamp(15px, 4vw, 20px);
+            border-top: 2px solid #ff00ff;
+            display: flex;
+            align-items: center;
+            gap: clamp(10px, 2.5vw, 12px);
+            z-index: 2;
+            position: relative;
+            min-height: 70px;
+        }
+
+        .input-prompt {
+            color: #ff00ff;
+            font-weight: bold;
+            white-space: nowrap;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 8px #ff00ff;
+            font-size: clamp(11px, 2.8vw, 14px);
+            flex-shrink: 0;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.5);
+            border: 2px solid #00ffff;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: clamp(12px, 3vw, 14px);
+            outline: none;
+            padding: clamp(10px, 2.5vw, 12px) clamp(12px, 3vw, 16px);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+            min-height: 44px; /* Minimum touch target */
+        }
+
+        .terminal-input:focus {
+            border-color: #ff00ff;
+            box-shadow: 
+                0 0 15px rgba(255, 0, 255, 0.4),
+                inset 0 0 15px rgba(255, 0, 255, 0.1);
+            background: rgba(255, 0, 255, 0.1);
+        }
+
+        .terminal-input::placeholder {
+            color: #888;
+            font-style: italic;
+        }
+
+        .cursor {
+            color: #ff00ff;
+            font-weight: bold;
+            animation: cyberpunk-cursor 1s infinite;
+            text-shadow: 0 0 8px #ff00ff;
+            font-size: clamp(14px, 3.5vw, 16px);
+            flex-shrink: 0;
+        }
+
+        /* Mobile Send Button */
+        .send-button {
+            background: linear-gradient(135deg, #ff00ff, #00ffff);
+            border: none;
+            color: #000;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: clamp(12px, 3vw, 14px);
+            padding: clamp(10px, 2.5vw, 12px) clamp(12px, 3vw, 16px);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(255, 0, 255, 0.4);
+            min-height: 44px;
+            min-width: 60px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            touch-action: manipulation;
+        }
+
+        .send-button:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
+        }
+
+        /* System messages - Mobile Optimized */
+        .system-message {
+            color: #ffff00;
+            font-style: italic;
+            margin: clamp(12px, 3vw, 15px) 0;
+            padding: clamp(12px, 3vw, 15px);
+            background: linear-gradient(135deg, rgba(255, 255, 0, 0.1), rgba(255, 165, 0, 0.1));
+            border: 2px solid #ffff00;
+            border-radius: 6px;
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 8px #ffff00;
+            box-shadow: 0 0 15px rgba(255, 255, 0, 0.2);
+            animation: system-glow 3s ease-in-out infinite alternate;
+            font-size: clamp(10px, 2.5vw, 12px);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* Animations - Performance Optimized */
+        @keyframes cyberpunk-glow {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes scanlines {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(4px); }
+        }
+
+        @keyframes neon-sweep {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        @keyframes neon-pulse {
+            0% { box-shadow: 0 0 15px rgba(255, 0, 255, 0.6); }
+            100% { box-shadow: 0 0 25px rgba(255, 0, 255, 1), 0 0 35px rgba(0, 255, 255, 0.5); }
+        }
+
+        @keyframes neon-flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        @keyframes cyberpunk-active {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.01); }
+        }
+
+        @keyframes cyberpunk-online {
+            0%, 100% { text-shadow: 0 0 8px #00ff41; }
+            50% { text-shadow: 0 0 15px #00ff41, 0 0 25px #00ff41; }
+        }
+
+        @keyframes cyberpunk-connection {
+            0%, 100% { transform: scale(1); color: #00ff41; }
+            50% { transform: scale(1.1); color: #00ffff; }
+        }
+
+        @keyframes cyberpunk-background {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes cyberpunk-cursor {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        @keyframes system-glow {
+            0% { box-shadow: 0 0 15px rgba(255, 255, 0, 0.2); }
+            100% { box-shadow: 0 0 25px rgba(255, 255, 0, 0.4); }
+        }
+
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            
+            .terminal-tabs .tab {
+                font-size: 10px;
+                padding: 4px 8px;
+                letter-spacing: 0.5px;
+            }
+            
+            .terminal-controls {
+                gap: 4px;
+            }
+            
+            .control {
+                width: 14px;
+                height: 14px;
+                font-size: 8px;
+            }
+            
+            body {
+                font-size: 12px;
+            }
+            
+            .message-output {
+                padding: 12px;
+                gap: 10px;
+            }
+            
+            .log-entry {
+                gap: 8px;
+                padding: 8px 0;
+                padding-left: 12px;
+            }
+            
+            .timestamp {
+                min-width: 60px;
+                font-size: 9px;
+            }
+            
+            .sender {
+                min-width: 45px;
+                font-size: 10px;
+            }
+            
+            .content {
+                font-size: 11px;
+            }
+            
+            .command-input {
+                padding: 12px;
+                gap: 8px;
+                min-height: 60px;
+            }
+            
+            .terminal-input {
+                font-size: 12px;
+                padding: 8px 12px;
+                min-height: 40px;
+            }
+            
+            .send-button {
+                font-size: 10px;
+                padding: 8px 12px;
+                min-height: 40px;
+                min-width: 50px;
+            }
+        }
+
+        /* Scrollbar styling - Mobile friendly */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: linear-gradient(180deg, #1a0033, #330066);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #ff00ff, #00ffff);
+            border-radius: 3px;
+            box-shadow: 0 0 5px rgba(255, 0, 255, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #00ffff, #ff00ff);
+            box-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
+        }
+
+        /* Loading animation */
+        .loading-dots::after {
+            content: '';
+            animation: cyberpunk-loading 1.5s infinite;
+        }
+
+        @keyframes cyberpunk-loading {
+            0% { content: ''; }
+            25% { content: '▸'; }
+            50% { content: '▸▸'; }
+            75% { content: '▸▸▸'; }
+            100% { content: ''; }
+        }
+
+        /* Performance optimizations */
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        .terminal-workspace,
+        .chat-terminal,
+        .message-output {
+            contain: layout style paint;
+        }
+
+        /* Prevent zoom on input focus on iOS */
+        @media screen and (-webkit-min-device-pixel-ratio: 0) {
+            .terminal-input {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Mobile Menu Backdrop -->
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
+
+    <!-- Terminal Header -->
+    <header class="terminal-header">
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
+        <div class="terminal-tabs">
+            <span class="tab active glitch" data-text="CYBERTERM">CYBERTERM</span>
+        </div>
+        <div class="terminal-controls">
+            <div class="control minimize">−</div>
+            <div class="control maximize">□</div>
+            <div class="control close">✕</div>
+        </div>
+    </header>
+
+    <!-- Mobile Conversation Drawer -->
+    <aside class="conversation-drawer" id="conversationDrawer">
+        <button class="drawer-close" id="drawerClose">✕</button>
+        
+        <div class="terminal-prompt">
+            <span class="prompt-symbol">⟩</span>
+            <span class="command-path">~/cyber/conv</span>
+        </div>
+        
+        <div class="conversation-list">
+            <div class="conversation-entry online active" data-user="user1@matrix.net">
+                <span class="file-icon">⚡</span>
+                <span class="user-name">user1@matrix.net</span>
+                <span class="unread-count">[3]</span>
+            </div>
+            
+            <div class="conversation-entry online" data-user="user2@neon.city">
+                <span class="file-icon">⚡</span>
+                <span class="user-name">user2@neon.city</span>
+                <span class="unread-count">[1]</span>
+            </div>
+            
+            <div class="conversation-entry offline" data-user="user3@grid.zone">
+                <span class="file-icon">⚠</span>
+                <span class="user-name">user3@grid.zone</span>
+                <span class="unread-count">[0]</span>
+            </div>
+            
+            <div class="conversation-entry online" data-user="support@cyber.corp">
+                <span class="file-icon">⚡</span>
+                <span class="user-name">support@cyber.corp</span>
+                <span class="unread-count">[2]</span>
+            </div>
+            
+            <div class="conversation-entry offline" data-user="test@hack.net">
+                <span class="file-icon">⚠</span>
+                <span class="user-name">test@hack.net</span>
+                <span class="unread-count">[0]</span>
+            </div>
+        </div>
+
+        <div class="system-message">
+            <strong>SYSTEM:</strong> NEURAL NETWORK ACTIVE | 5 CONNECTIONS | 6 ENCRYPTED MESSAGES
+        </div>
+    </aside>
+
+    <!-- Terminal Workspace -->
+    <main class="terminal-workspace">
+        <!-- Chat Terminal -->
+        <section class="chat-terminal">
+            <div class="chat-header">
+                <span class="terminal-title glitch" data-text="CYBER-SESSION: user1@matrix.net" id="terminalTitle">CYBER-SESSION: user1@matrix.net</span>
+                <span class="connection-status">ONLINE</span>
+            </div>
+            
+            <div class="message-output" id="messageOutput">
+                <div class="log-entry user">
+                    <span class="timestamp">[16:30:45]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Xin chào, tôi cần hỗ trợ với tài khoản của mình</span>
+                </div>
+                
+                <div class="log-entry admin">
+                    <span class="timestamp">[16:31:02]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?</span>
+                </div>
+                
+                <div class="log-entry user">
+                    <span class="timestamp">[16:31:15]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Tôi không thể đăng nhập được, nó báo lỗi "Email hoặc mật khẩu không đúng"</span>
+                </div>
+                
+                <div class="log-entry admin">
+                    <span class="timestamp">[16:31:28]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">Tôi hiểu vấn đề. Để kiểm tra, bạn có thể xác nhận email đăng ký không?</span>
+                </div>
+                
+                <div class="log-entry user">
+                    <span class="timestamp">[16:31:45]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Đúng rồi, email là user1@matrix.net</span>
+                </div>
+                
+                <div class="system-message">
+                    <strong>INFO:</strong> USER TYPING <span class="loading-dots"></span>
+                </div>
+            </div>
+            
+            <div class="command-input">
+                <span class="input-prompt">admin$</span>
+                <input type="text" class="terminal-input" placeholder="nhập tin nhắn cyberpunk..." id="messageInput" />
+                <button class="send-button" id="sendButton">SEND</button>
+                <span class="cursor">█</span>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Mobile-optimized functionality
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const conversationDrawer = document.getElementById('conversationDrawer');
+        const drawerBackdrop = document.getElementById('drawerBackdrop');
+        const drawerClose = document.getElementById('drawerClose');
+        const messageInput = document.getElementById('messageInput');
+        const messageOutput = document.getElementById('messageOutput');
+        const sendButton = document.getElementById('sendButton');
+        const terminalTitle = document.getElementById('terminalTitle');
+        const conversationEntries = document.querySelectorAll('.conversation-entry');
+
+        // Mobile drawer functionality
+        function openDrawer() {
+            conversationDrawer.classList.add('open');
+            drawerBackdrop.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDrawer() {
+            conversationDrawer.classList.remove('open');
+            drawerBackdrop.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        mobileMenuToggle.addEventListener('click', openDrawer);
+        drawerClose.addEventListener('click', closeDrawer);
+        drawerBackdrop.addEventListener('click', closeDrawer);
+
+        // Close drawer on swipe left (basic touch support)
+        let startX = 0;
+        conversationDrawer.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+        });
+
+        conversationDrawer.addEventListener('touchmove', (e) => {
+            const currentX = e.touches[0].clientX;
+            const diffX = startX - currentX;
+            
+            if (diffX > 50) { // Swipe left threshold
+                closeDrawer();
+            }
+        });
+
+        // Enhanced send message with mobile optimizations
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message) {
+                const timestamp = new Date().toLocaleTimeString('vi-VN', { 
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry admin';
+                logEntry.innerHTML = `
+                    <span class="timestamp">[${timestamp}]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">${message}</span>
+                `;
+                
+                // Add cyberpunk entrance effect
+                logEntry.style.opacity = '0';
+                logEntry.style.transform = 'translateX(-15px)';
+                messageOutput.appendChild(logEntry);
+                
+                // Animate in
+                setTimeout(() => {
+                    logEntry.style.transition = 'all 0.4s ease';
+                    logEntry.style.opacity = '1';
+                    logEntry.style.transform = 'translateX(0)';
+                }, 10);
+                
+                messageInput.value = '';
+                messageOutput.scrollTop = messageOutput.scrollHeight;
+
+                // Haptic feedback on mobile (if supported)
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(50);
+                }
+
+                // Cyberpunk system message
+                setTimeout(() => {
+                    const systemMsg = document.createElement('div');
+                    systemMsg.className = 'system-message';
+                    systemMsg.innerHTML = '<strong>TRANSMISSION:</strong> MESSAGE ENCRYPTED AND SENT TO NEURAL NETWORK';
+                    messageOutput.appendChild(systemMsg);
+                    messageOutput.scrollTop = messageOutput.scrollHeight;
+                    
+                    setTimeout(() => {
+                        systemMsg.style.transition = 'all 0.5s ease';
+                        systemMsg.style.opacity = '0';
+                        systemMsg.style.transform = 'translateY(-20px)';
+                        setTimeout(() => systemMsg.remove(), 500);
+                    }, 2000);
+                }, 500);
+            }
+        }
+
+        // Send button and enter key handling
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Conversation switching with mobile optimizations
+        conversationEntries.forEach(entry => {
+            entry.addEventListener('click', function() {
+                // Haptic feedback
+                if ('vibrate' in navigator) {
+                    navigator.vibrate(30);
+                }
+
+                // Remove active class from all entries
+                conversationEntries.forEach(e => e.classList.remove('active'));
+                // Add active class to clicked entry
+                this.classList.add('active');
+                
+                // Update terminal title
+                const username = this.querySelector('.user-name').textContent;
+                terminalTitle.textContent = `CYBER-SESSION: ${username}`;
+                terminalTitle.setAttribute('data-text', `CYBER-SESSION: ${username}`);
+                
+                // Clear and simulate loading new conversation
+                messageOutput.innerHTML = `
+                    <div class="system-message">
+                        <strong>LOADING:</strong> DECRYPTING NEURAL PATHWAYS FOR ${username}<span class="loading-dots"></span>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    messageOutput.innerHTML = `
+                        <div class="log-entry user">
+                            <span class="timestamp">[${new Date().toLocaleTimeString('vi-VN', { hour12: false })}]</span>
+                            <span class="sender">user:</span>
+                            <span class="content">Chào admin, tôi có thể được hỗ trợ không?</span>
+                        </div>
+                    `;
+                    messageOutput.scrollTop = messageOutput.scrollHeight;
+                }, 1000);
+
+                // Close drawer after selection (longer delay on desktop)
+                const closeDelay = window.innerWidth <= 768 ? 500 : 1000;
+                setTimeout(closeDrawer, closeDelay);
+            });
+        });
+
+        // Auto-focus input (with mobile considerations)
+        window.addEventListener('load', () => {
+            // Don't auto-focus on mobile to prevent keyboard popup
+            if (window.innerWidth > 768) {
+                messageInput.focus();
+            }
+        });
+
+        // Handle keyboard appearing/disappearing on mobile
+        let initialViewportHeight = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            const currentHeight = window.innerHeight;
+            const heightDifference = initialViewportHeight - currentHeight;
+            
+            // If keyboard is likely open (significant height reduction)
+            if (heightDifference > 150) {
+                document.body.style.height = currentHeight + 'px';
+                // Scroll to keep input visible
+                setTimeout(() => {
+                    messageInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            } else {
+                document.body.style.height = '';
+            }
+        });
+
+        // Prevent zoom on input focus on iOS
+        messageInput.addEventListener('focus', function() {
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                this.style.fontSize = '16px';
+            }
+        });
+
+        messageInput.addEventListener('blur', function() {
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                this.style.fontSize = '';
+            }
+        });
+
+        // Enhanced real-time cyberpunk updates (reduced frequency for mobile)
+        setInterval(() => {
+            const cyberpunkMessages = [
+                'Neural pathway established with user2@neon.city',
+                'Quantum encryption key rotated successfully',
+                'Firewall detected intrusion attempt - blocked',
+                'New connection from synthetic user detected',
+                'Data stream optimization complete',
+                'Cybernetic enhancement protocol activated'
+            ];
+            
+            if (Math.random() > 0.9) {
+                const systemMsg = document.createElement('div');
+                systemMsg.className = 'system-message';
+                systemMsg.innerHTML = `<strong>SYSTEM:</strong> ${cyberpunkMessages[Math.floor(Math.random() * cyberpunkMessages.length)]}`;
+                messageOutput.appendChild(systemMsg);
+                messageOutput.scrollTop = messageOutput.scrollHeight;
+                
+                setTimeout(() => {
+                    systemMsg.style.transition = 'all 0.5s ease';
+                    systemMsg.style.opacity = '0';
+                    systemMsg.style.transform = 'translateY(-20px)';
+                    setTimeout(() => systemMsg.remove(), 500);
+                }, 4000);
+            }
+        }, 8000);
+
+        // Cyberpunk typing visual feedback
+        messageInput.addEventListener('keydown', () => {
+            messageInput.style.boxShadow = '0 0 25px rgba(255, 0, 255, 0.6)';
+            setTimeout(() => {
+                messageInput.style.boxShadow = '0 0 15px rgba(255, 0, 255, 0.4)';
+            }, 100);
+        });
+
+        // Performance optimization: Reduce animations on low-power devices
+        if (navigator.hardwareConcurrency <= 2) {
+            document.documentElement.style.setProperty('--animation-duration', '0.5s');
+        }
+
+        // Handle device orientation change
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                initialViewportHeight = window.innerHeight;
+                messageOutput.scrollTop = messageOutput.scrollHeight;
+            }, 300);
+        });
+
+        // Keyboard shortcuts for better desktop UX
+        document.addEventListener('keydown', (e) => {
+            // Toggle drawer with Ctrl/Cmd + B
+            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault();
+                if (conversationDrawer.classList.contains('open')) {
+                    closeDrawer();
+                } else {
+                    openDrawer();
+                }
+            }
+            
+            // Close drawer with Escape key
+            if (e.key === 'Escape' && conversationDrawer.classList.contains('open')) {
+                closeDrawer();
+            }
+
+            // Focus input with / key (like vim)
+            if (e.key === '/' && document.activeElement !== messageInput && !conversationDrawer.classList.contains('open')) {
+                e.preventDefault();
+                messageInput.focus();
+            }
+        });
+    </script>
+</body>
+</html>

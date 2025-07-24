@@ -1,82 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono:wght@400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* OKLCH Color Palette - Enhanced for Better Visualization */
-    --background: oklch(0.99 0.005 106);
-    --foreground: oklch(0.12 0.035 282);
-    --card: oklch(0.99 0.005 106);
-    --card-foreground: oklch(0.12 0.035 282);
-    --popover: oklch(0.99 0.005 106);
-    --popover-foreground: oklch(0.12 0.035 282);
-    --primary: oklch(0.445 0.152 262);
-    --primary-foreground: oklch(0.99 0.005 106);
-    --secondary: oklch(0.94 0.018 106);
-    --secondary-foreground: oklch(0.38 0.065 282);
-    --muted: oklch(0.94 0.018 106);
-    --muted-foreground: oklch(0.45 0.045 282);
-    --accent: oklch(0.92 0.025 106);
-    --accent-foreground: oklch(0.35 0.075 282);
-    --destructive: oklch(0.576 0.191 17);
-    --destructive-foreground: oklch(0.99 0.005 106);
-    --border: oklch(0.88 0.022 106);
-    --input: oklch(0.88 0.022 106);
-    --ring: oklch(0.445 0.152 262);
+    /* Cyberpunk Terminal Theme - Based on Design 2A */
+    --background: #0a0a0a;
+    --foreground: #00ffff;
+    --card: rgba(255, 0, 255, 0.1);
+    --card-foreground: #00ffff;
+    --popover: #1a0033;
+    --popover-foreground: #00ffff;
+    --primary: #ff00ff;
+    --primary-foreground: #000000;
+    --secondary: rgba(0, 255, 255, 0.2);
+    --secondary-foreground: #00ffff;
+    --muted: rgba(255, 0, 255, 0.05);
+    --muted-foreground: #888888;
+    --accent: #00ff41;
+    --accent-foreground: #000000;
+    --destructive: #ff0080;
+    --destructive-foreground: #ffffff;
+    --border: #ff00ff;
+    --input: rgba(0, 0, 0, 0.5);
+    --ring: #ff00ff;
     
-    /* Enhanced status and notification colors */
-    --success: oklch(0.65 0.15 145);
-    --success-foreground: oklch(0.99 0.005 106);
-    --warning: oklch(0.75 0.12 85);
-    --warning-foreground: oklch(0.12 0.035 282);
-    --info: oklch(0.55 0.18 235);
-    --info-foreground: oklch(0.99 0.005 106);
+    /* Cyberpunk status and notification colors */
+    --success: #00ff41;
+    --success-foreground: #000000;
+    --warning: #ffff00;
+    --warning-foreground: #000000;
+    --info: #00ffff;
+    --info-foreground: #000000;
     
-    /* Chart colors with better contrast */
-    --chart-1: oklch(0.676 0.182 17);
-    --chart-2: oklch(0.506 0.137 171);
-    --chart-3: oklch(0.378 0.068 252);
-    --chart-4: oklch(0.729 0.156 83);
-    --chart-5: oklch(0.729 0.156 34);
-    --radius: 1.3rem;
+    /* Cyberpunk chart colors */
+    --chart-1: #ff00ff;
+    --chart-2: #00ffff;
+    --chart-3: #00ff41;
+    --chart-4: #ff0080;
+    --chart-5: #ffff00;
+    --radius: 0.5rem;
+    
+    /* Cyberpunk specific colors */
+    --cyberpunk-magenta: #ff00ff;
+    --cyberpunk-cyan: #00ffff;
+    --cyberpunk-green: #00ff41;
+    --cyberpunk-pink: #ff0080;
+    --cyberpunk-yellow: #ffff00;
+    --cyberpunk-background: #0a0a0a;
+    --cyberpunk-terminal: #1a0033;
+    --cyberpunk-panel: #0f001a;
   }
 
   .dark {
-    --background: oklch(0.065 0.078 282);
-    --foreground: oklch(0.92 0.018 106);
-    --card: oklch(0.065 0.078 282);
-    --card-foreground: oklch(0.92 0.018 106);
-    --popover: oklch(0.065 0.078 282);
-    --popover-foreground: oklch(0.92 0.018 106);
-    --primary: oklch(0.99 0.005 106);
-    --primary-foreground: oklch(0.065 0.078 282);
-    --secondary: oklch(0.12 0.098 282);
-    --secondary-foreground: oklch(0.85 0.025 106);
-    --muted: oklch(0.18 0.085 282);
-    --muted-foreground: oklch(0.65 0.045 282);
-    --accent: oklch(0.22 0.095 282);
-    --accent-foreground: oklch(0.88 0.022 106);
+    --background: oklch(0.08 0.02 240);
+    --foreground: oklch(0.92 0.01 200);
+    --card: oklch(0.12 0.02 240);
+    --card-foreground: oklch(0.92 0.01 200);
+    --popover: oklch(0.12 0.02 240);
+    --popover-foreground: oklch(0.92 0.01 200);
+    --primary: oklch(0.68 0.16 232);
+    --primary-foreground: oklch(0.08 0.02 240);
+    --secondary: oklch(0.18 0.02 240);
+    --secondary-foreground: oklch(0.85 0.01 200);
+    --muted: oklch(0.18 0.02 240);
+    --muted-foreground: oklch(0.65 0.01 200);
+    --accent: oklch(0.22 0.03 232);
+    --accent-foreground: oklch(0.68 0.16 232);
     --destructive: oklch(0.484 0.191 17);
-    --destructive-foreground: oklch(0.92 0.018 106);
-    --border: oklch(0.25 0.085 282);
-    --input: oklch(0.25 0.085 282);
-    --ring: oklch(0.445 0.152 262);
+    --destructive-foreground: oklch(0.92 0.01 200);
+    --border: oklch(0.25 0.02 240);
+    --input: oklch(0.25 0.02 240);
+    --ring: oklch(0.68 0.16 232);
     
-    /* Enhanced dark mode status colors */
+    /* Dark mode blue theme status colors */
     --success: oklch(0.55 0.15 145);
-    --success-foreground: oklch(0.92 0.018 106);
+    --success-foreground: oklch(0.92 0.01 200);
     --warning: oklch(0.65 0.12 85);
-    --warning-foreground: oklch(0.065 0.078 282);
-    --info: oklch(0.65 0.18 235);
-    --info-foreground: oklch(0.92 0.018 106);
+    --warning-foreground: oklch(0.08 0.02 240);
+    --info: oklch(0.68 0.16 232);
+    --info-foreground: oklch(0.92 0.01 200);
     
-    /* Dark mode chart colors */
-    --chart-1: oklch(0.576 0.191 231);
-    --chart-2: oklch(0.506 0.137 171);
-    --chart-3: oklch(0.729 0.156 83);
-    --chart-4: oklch(0.676 0.149 325);
-    --chart-5: oklch(0.729 0.156 2);
+    /* Dark mode blue dashboard chart colors */
+    --chart-1: oklch(0.68 0.16 232);
+    --chart-2: oklch(0.60 0.14 245);
+    --chart-3: oklch(0.72 0.12 220);
+    --chart-4: oklch(0.50 0.18 250);
+    --chart-5: oklch(0.76 0.10 210);
+    
+    /* Dark mode dashboard specific colors */
+    --dashboard-blue: oklch(0.68 0.16 232);
+    --dashboard-blue-light: oklch(0.78 0.12 232);
+    --dashboard-blue-dark: oklch(0.55 0.18 232);
+    --dashboard-card-bg: oklch(0.12 0.02 240);
+    --dashboard-text: oklch(0.92 0.01 200);
   }
 }
 
@@ -308,7 +327,7 @@
   }
 }
 
-/* Enhanced Interactive Elements */
+/* Enhanced Interactive Elements - Blue Dashboard Theme */
 .interactive-element {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center;
@@ -316,7 +335,7 @@
 
 .interactive-element:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px oklch(0.15 0.025 282 / 0.15);
+  box-shadow: 0 4px 12px var(--dashboard-blue) / 0.15;
 }
 
 .interactive-element:active {
@@ -324,77 +343,87 @@
   transition-duration: 0.1s;
 }
 
-/* Enhanced Focus Indicators */
+/* Enhanced Focus Indicators - Blue Theme */
 .focus-ring {
-  outline: 2px solid var(--ring);
+  outline: 2px solid var(--dashboard-blue);
   outline-offset: 2px;
 }
 
-/* Modern Button Enhancements */
+/* Modern Button Enhancements - Blue Theme */
 button:focus-visible {
-  outline: 2px solid var(--ring);
+  outline: 2px solid var(--dashboard-blue);
   outline-offset: 2px;
 }
 
-/* Enhanced Card Shadows */
+/* Enhanced Card Shadows - Clean Dashboard Style */
 .card-enhanced {
+  background: var(--dashboard-card-bg);
+  border-radius: var(--radius);
   box-shadow: 
-    0 1px 3px oklch(0.15 0.025 282 / 0.1),
-    0 1px 2px oklch(0.15 0.025 282 / 0.06);
+    0 1px 3px oklch(0.09 0.02 240 / 0.1),
+    0 1px 2px oklch(0.09 0.02 240 / 0.06);
+  border: 1px solid var(--border);
 }
 
 .card-enhanced:hover {
   box-shadow: 
-    0 4px 6px oklch(0.15 0.025 282 / 0.1),
-    0 2px 4px oklch(0.15 0.025 282 / 0.06);
+    0 4px 6px oklch(0.09 0.02 240 / 0.1),
+    0 2px 4px oklch(0.09 0.02 240 / 0.06);
+  border-color: var(--dashboard-blue-light);
 }
 
-/* Enhanced Input Styling */
+/* Enhanced Input Styling - Blue Dashboard Theme */
 input:focus,
 textarea:focus {
-  border-color: var(--ring);
-  box-shadow: 0 0 0 2px oklch(0.445 0.152 262 / 0.2);
+  border-color: var(--dashboard-blue);
+  box-shadow: 0 0 0 2px var(--dashboard-blue) / 0.2;
 }
 
-/* Enhanced Conversation List Styling */
+/* Enhanced Conversation List Styling - Blue Dashboard Theme */
 .conversation-item {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: var(--radius);
   padding: 0.75rem;
   margin: 0.25rem 0;
+  background: var(--dashboard-card-bg);
+  border: 1px solid var(--border);
 }
 
 .conversation-item:hover {
   background-color: var(--accent);
   transform: translateX(2px);
+  border-color: var(--dashboard-blue-light);
+  box-shadow: 0 2px 8px var(--dashboard-blue) / 0.1;
 }
 
 .conversation-item.selected {
-  background-color: var(--secondary);
-  border-left: 3px solid var(--primary);
-  box-shadow: 0 2px 8px oklch(0.445 0.152 262 / 0.15);
+  background-color: var(--dashboard-card-bg);
+  border-left: 4px solid var(--dashboard-blue);
+  box-shadow: 0 2px 12px var(--dashboard-blue) / 0.15;
+  border-color: var(--dashboard-blue-light);
 }
 
 .conversation-item.unread {
-  background-color: oklch(0.96 0.02 262 / 0.3);
-  border-left: 3px solid var(--info);
+  background-color: var(--dashboard-card-bg);
+  border-left: 4px solid var(--dashboard-blue);
+  box-shadow: 0 0 0 1px var(--dashboard-blue) / 0.2;
 }
 
-/* Enhanced Status Indicators */
+/* Enhanced Status Indicators - Blue Dashboard Theme */
 .status-online {
   background-color: var(--success);
-  box-shadow: 0 0 0 2px var(--background), 0 0 8px var(--success);
+  box-shadow: 0 0 0 2px var(--dashboard-card-bg), 0 0 8px var(--success);
   animation: pulse-success 2s infinite;
 }
 
 .status-offline {
   background-color: var(--muted-foreground);
-  box-shadow: 0 0 0 2px var(--background);
+  box-shadow: 0 0 0 2px var(--dashboard-card-bg);
 }
 
 .status-away {
   background-color: var(--warning);
-  box-shadow: 0 0 0 2px var(--background), 0 0 6px var(--warning);
+  box-shadow: 0 0 0 2px var(--dashboard-card-bg), 0 0 6px var(--warning);
 }
 
 @keyframes pulse-success {
@@ -402,20 +431,21 @@ textarea:focus {
   50% { opacity: 0.7; }
 }
 
-/* Enhanced Message Styling */
+/* Enhanced Message Styling - Blue Dashboard Theme */
 .message-user {
-  background: linear-gradient(135deg, var(--primary) 0%, oklch(0.485 0.162 252) 100%);
+  background: linear-gradient(135deg, var(--dashboard-blue) 0%, var(--dashboard-blue-light) 100%);
   color: var(--primary-foreground);
   border-radius: var(--radius) var(--radius) 0.25rem var(--radius);
-  box-shadow: 0 2px 12px oklch(0.445 0.152 262 / 0.25);
+  box-shadow: 0 2px 12px var(--dashboard-blue) / 0.25;
+  border: none;
 }
 
 .message-admin {
-  background: var(--secondary);
-  color: var(--secondary-foreground);
+  background: var(--dashboard-card-bg);
+  color: var(--dashboard-text);
   border-radius: var(--radius) var(--radius) var(--radius) 0.25rem;
   border: 1px solid var(--border);
-  box-shadow: 0 1px 6px oklch(0.12 0.035 282 / 0.1);
+  box-shadow: 0 1px 6px oklch(0.09 0.02 240 / 0.1);
 }
 
 .message-timestamp {
@@ -425,10 +455,10 @@ textarea:focus {
   opacity: 0.8;
 }
 
-/* Enhanced Notification Badges */
+/* Enhanced Notification Badges - Blue Dashboard Theme */
 .notification-badge {
-  background: linear-gradient(135deg, var(--destructive) 0%, oklch(0.616 0.201 27) 100%);
-  color: var(--destructive-foreground);
+  background: var(--dashboard-blue);
+  color: var(--primary-foreground);
   font-weight: 600;
   font-size: 0.7rem;
   min-width: 1.25rem;
@@ -437,7 +467,7 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px oklch(0.576 0.191 17 / 0.4);
+  box-shadow: 0 2px 8px var(--dashboard-blue) / 0.4;
   animation: bounce-in 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
@@ -448,17 +478,58 @@ textarea:focus {
 }
 
 .unread-indicator {
-  background: var(--info);
+  background: var(--dashboard-blue);
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 50%;
-  box-shadow: 0 0 0 2px var(--background), 0 0 6px var(--info);
+  box-shadow: 0 0 0 2px var(--dashboard-card-bg), 0 0 6px var(--dashboard-blue);
   animation: pulse-info 1.5s infinite;
 }
 
 @keyframes pulse-info {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+/* Blue Dashboard Button Styling */
+.dashboard-button {
+  background: var(--dashboard-blue);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px var(--dashboard-blue) / 0.3;
+}
+
+.dashboard-button:hover {
+  background: var(--dashboard-blue-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--dashboard-blue) / 0.4;
+}
+
+.dashboard-button:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px var(--dashboard-blue) / 0.3;
+}
+
+/* Dashboard Secondary Button */
+.dashboard-button-secondary {
+  background: var(--dashboard-card-bg);
+  color: var(--dashboard-blue);
+  border: 1px solid var(--dashboard-blue);
+  border-radius: var(--radius);
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-button-secondary:hover {
+  background: var(--dashboard-blue);
+  color: var(--primary-foreground);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px var(--dashboard-blue) / 0.2;
 }
 
 /* Smooth Scrollbar */
@@ -481,4 +552,893 @@ textarea:focus {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--foreground);
   opacity: 0.7;
+}
+
+/* CYBERPUNK TERMINAL STYLES - Design 2A Integration */
+
+/* Base cyberpunk body styling */
+.cyberpunk-body {
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  background: var(--cyberpunk-background);
+  color: var(--cyberpunk-cyan);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  font-size: clamp(12px, 2.5vw, 14px);
+  line-height: 1.6;
+  position: relative;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection in message content */
+.cyberpunk-selectable {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Cyberpunk Background Effects */
+.cyberpunk-background::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 50%, rgba(255, 0, 255, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 80% 20%, rgba(0, 255, 255, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 40% 80%, rgba(255, 20, 147, 0.08) 0%, transparent 60%);
+  animation: cyberpunk-glow 10s ease-in-out infinite alternate;
+  z-index: -2;
+  will-change: opacity;
+}
+
+.cyberpunk-background::after {
+  content: '';
+  position: fixed;
+  top: 0;  
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 255, 255, 0.02) 2px,
+    rgba(0, 255, 255, 0.02) 4px
+  );
+  pointer-events: none;
+  z-index: 1000;
+  animation: scanlines 0.15s linear infinite;
+  will-change: transform;
+}
+
+/* Terminal Header */
+.cyberpunk-header {
+  background: linear-gradient(90deg, #1a0026, #26004d, #1a0026);
+  height: clamp(35px, 8vh, 45px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(10px, 3vw, 20px);
+  border-bottom: 2px solid var(--cyberpunk-magenta);
+  box-shadow: 
+    0 0 15px rgba(255, 0, 255, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 100;
+}
+
+.cyberpunk-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 0, 255, 0.1) 50%, 
+    transparent 100%);
+  animation: neon-sweep 4s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Menu Toggle */
+.cyberpunk-menu-toggle {
+  display: block;
+  background: none;
+  border: none;
+  color: var(--cyberpunk-magenta);
+  font-size: clamp(18px, 4vw, 24px);
+  cursor: pointer;
+  padding: 8px;
+  z-index: 2;
+  text-shadow: 0 0 10px var(--cyberpunk-magenta);
+  transition: all 0.3s ease;
+  touch-action: manipulation;
+}
+
+.cyberpunk-menu-toggle:hover {
+  color: var(--cyberpunk-cyan);
+  text-shadow: 0 0 15px var(--cyberpunk-cyan);
+  transform: scale(1.1);
+}
+
+.cyberpunk-menu-toggle:active {
+  transform: scale(0.95);
+}
+
+/* Terminal Tabs */
+.cyberpunk-tabs {
+  display: flex;
+  gap: clamp(8px, 2vw, 15px);
+  z-index: 2;
+  flex: 1;
+  justify-content: center;
+}
+
+.cyberpunk-tab {
+  background: linear-gradient(135deg, #330066, #660033);
+  padding: clamp(6px, 1.5vw, 8px) clamp(8px, 3vw, 16px);
+  border-radius: 6px 6px 0 0;
+  font-size: clamp(10px, 2vw, 12px);
+  color: var(--cyberpunk-magenta);
+  position: relative;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid var(--cyberpunk-magenta);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60vw;
+}
+
+.cyberpunk-tab.active {
+  background: linear-gradient(135deg, var(--cyberpunk-magenta), var(--cyberpunk-cyan));
+  color: #000;
+  box-shadow: 
+    0 0 15px rgba(255, 0, 255, 0.8),
+    inset 0 0 15px rgba(255, 255, 255, 0.2);
+  animation: neon-pulse 2.5s ease-in-out infinite alternate;
+}
+
+/* Terminal Controls */
+.cyberpunk-controls {
+  display: flex;
+  gap: clamp(6px, 1.5vw, 10px);
+  z-index: 2;
+}
+
+.cyberpunk-control {
+  width: clamp(12px, 3vw, 16px);
+  height: clamp(12px, 3vw, 16px);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(8px, 2vw, 10px);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  touch-action: manipulation;
+}
+
+.cyberpunk-control.minimize { 
+  background: linear-gradient(135deg, #ffff00, #ff8c00);
+  color: #000;
+  box-shadow: 0 0 8px rgba(255, 255, 0, 0.6);
+}
+
+.cyberpunk-control.maximize { 
+  background: linear-gradient(135deg, #00ff41, #32cd32);
+  color: #000;
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.6);
+}
+
+.cyberpunk-control.close { 
+  background: linear-gradient(135deg, #ff0080, #ff4500);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(255, 0, 128, 0.6);
+}
+
+.cyberpunk-control:active {
+  transform: scale(0.9);
+}
+
+/* Conversation Drawer */
+.cyberpunk-drawer {
+  position: fixed;
+  top: clamp(35px, 8vh, 45px);
+  left: -100%;
+  width: min(85vw, 380px);
+  height: calc(100vh - clamp(35px, 8vh, 45px));
+  height: calc(100dvh - clamp(35px, 8vh, 45px));
+  background: linear-gradient(180deg, #0f001a, #1a0033, #0f001a);
+  border-right: 2px solid var(--cyberpunk-cyan);
+  padding: clamp(15px, 4vw, 25px);
+  overflow-y: auto;
+  z-index: 90;
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 2px 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.cyberpunk-drawer.open {
+  left: 0;
+}
+
+.cyberpunk-drawer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 20px,
+      rgba(0, 255, 255, 0.03) 20px,
+      rgba(0, 255, 255, 0.03) 40px
+    );
+  pointer-events: none;
+}
+
+/* Desktop drawer adjustments */
+@media (min-width: 769px) {
+  .cyberpunk-drawer {
+    left: -400px;
+    width: 380px;
+  }
+  
+  .cyberpunk-drawer.open {
+    left: 0;
+  }
+}
+
+/* Backdrop for drawer */
+.cyberpunk-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+  z-index: 85;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.cyberpunk-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Desktop backdrop - lighter for better UX */
+@media (min-width: 769px) {
+  .cyberpunk-backdrop {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(3px);
+  }
+}
+
+/* Drawer close button */
+.cyberpunk-drawer-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: var(--cyberpunk-magenta);
+  font-size: 24px;
+  cursor: pointer;
+  z-index: 2;
+  padding: 8px;
+  text-shadow: 0 0 10px var(--cyberpunk-magenta);
+  transition: all 0.3s ease;
+}
+
+.cyberpunk-drawer-close:hover {
+  color: var(--cyberpunk-cyan);
+  text-shadow: 0 0 15px var(--cyberpunk-cyan);
+  transform: scale(1.1);
+}
+
+/* Terminal Prompt */
+.cyberpunk-prompt {
+  margin-bottom: clamp(15px, 4vw, 20px);
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2vw, 10px);
+  z-index: 2;
+  position: relative;
+}
+
+.cyberpunk-prompt-symbol {
+  color: var(--cyberpunk-magenta);
+  font-weight: bold;
+  font-size: clamp(16px, 4vw, 18px);
+  text-shadow: 0 0 10px var(--cyberpunk-magenta);
+  animation: neon-flicker 0.5s ease-in-out infinite alternate;
+}
+
+.cyberpunk-prompt-path {
+  color: var(--cyberpunk-cyan);
+  font-size: clamp(12px, 3vw, 14px);
+  font-family: 'Orbitron', monospace;
+  text-shadow: 0 0 10px var(--cyberpunk-cyan);
+  word-break: break-all;
+}
+
+/* Conversation List */
+.cyberpunk-conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(10px, 2.5vw, 12px);
+  z-index: 2;
+  position: relative;
+  margin-bottom: clamp(15px, 4vw, 20px);
+}
+
+.cyberpunk-conversation-entry {
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 2.5vw, 12px);
+  padding: clamp(12px, 3vw, 15px);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(0, 255, 255, 0.1));
+  position: relative;
+  overflow: hidden;
+  touch-action: manipulation;
+  min-height: 48px;
+}
+
+.cyberpunk-conversation-entry::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.1), 
+    transparent);
+  transition: left 0.5s ease;
+}
+
+.cyberpunk-conversation-entry:active::before {
+  left: 100%;
+}
+
+.cyberpunk-conversation-entry:active {
+  background: linear-gradient(135deg, rgba(255, 0, 255, 0.2), rgba(0, 255, 255, 0.2));
+  border-color: var(--cyberpunk-magenta);
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.3);
+  transform: scale(0.98);
+}
+
+.cyberpunk-conversation-entry.active {
+  background: linear-gradient(135deg, var(--cyberpunk-magenta), var(--cyberpunk-cyan));
+  color: #000;
+  border-color: #fff;
+  box-shadow: 
+    0 0 25px rgba(255, 0, 255, 0.6),
+    inset 0 0 15px rgba(255, 255, 255, 0.2);
+  animation: cyberpunk-active 2s ease-in-out infinite alternate;
+}
+
+.cyberpunk-conversation-entry.active .cyberpunk-unread-count {
+  background: #000;
+  color: var(--cyberpunk-magenta);
+  box-shadow: 0 0 8px var(--cyberpunk-magenta);
+}
+
+.cyberpunk-file-icon {
+  font-size: clamp(16px, 4vw, 20px);
+  filter: drop-shadow(0 0 3px currentColor);
+  flex-shrink: 0;
+}
+
+.cyberpunk-user-name {
+  flex: 1;
+  font-size: clamp(11px, 2.8vw, 13px);
+  font-weight: 500;
+  font-family: 'Orbitron', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.cyberpunk-unread-count {
+  background: linear-gradient(135deg, var(--cyberpunk-magenta), var(--cyberpunk-pink));
+  color: #fff;
+  padding: clamp(3px, 1vw, 4px) clamp(6px, 1.5vw, 8px);
+  border-radius: 4px;
+  font-size: clamp(9px, 2.2vw, 11px);
+  font-weight: bold;
+  font-family: 'Orbitron', monospace;
+  box-shadow: 0 0 10px rgba(255, 0, 255, 0.6);
+  animation: neon-pulse 1.5s ease-in-out infinite alternate;
+  flex-shrink: 0;
+  min-width: 24px;
+  text-align: center;
+}
+
+.cyberpunk-conversation-entry.online::before {
+  content: '●';
+  color: var(--cyberpunk-green);
+  margin-right: 6px;
+  font-size: clamp(12px, 3vw, 16px);
+  animation: cyberpunk-online 2s infinite;
+  text-shadow: 0 0 8px var(--cyberpunk-green);
+}
+
+.cyberpunk-conversation-entry.offline::before {
+  content: '●';
+  color: #666;
+  margin-right: 6px;
+  font-size: clamp(12px, 3vw, 16px);
+}
+
+/* Main Chat Terminal */
+.cyberpunk-chat-terminal {
+  flex: 1;
+  background: linear-gradient(180deg, #001122, #000033, #001122);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.cyberpunk-chat-terminal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 30% 40%, rgba(255, 0, 255, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 70% 80%, rgba(0, 255, 255, 0.08) 0%, transparent 60%);
+  pointer-events: none;
+  animation: cyberpunk-background 12s ease-in-out infinite alternate;
+  will-change: opacity;
+}
+
+.cyberpunk-chat-header {
+  background: linear-gradient(90deg, #1a0033, #330066, #1a0033);
+  padding: clamp(15px, 4vw, 20px);
+  border-bottom: 2px solid var(--cyberpunk-cyan);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 2;
+  position: relative;
+  min-height: 60px;
+  gap: 10px;
+}
+
+.cyberpunk-terminal-title {
+  color: var(--cyberpunk-cyan);
+  font-weight: 700;
+  font-size: clamp(12px, 3vw, 16px);
+  font-family: 'Orbitron', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 12px var(--cyberpunk-cyan);
+  word-break: break-all;
+  line-height: 1.3;
+  flex: 1;
+}
+
+.cyberpunk-connection-status {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1.5vw, 8px);
+  font-size: clamp(10px, 2.5vw, 12px);
+  color: var(--cyberpunk-green);
+  font-family: 'Orbitron', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px var(--cyberpunk-green);
+  flex-shrink: 0;
+}
+
+.cyberpunk-connection-status::before {
+  content: '●';
+  animation: cyberpunk-connection 1.5s infinite;
+  font-size: clamp(10px, 2.5vw, 14px);
+}
+
+/* Message Output */
+.cyberpunk-message-output {
+  flex: 1;
+  padding: clamp(15px, 4vw, 25px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 3vw, 15px);
+  font-family: 'Share Tech Mono', monospace;
+  z-index: 2;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.cyberpunk-log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(8px, 2vw, 12px);
+  padding: clamp(8px, 2vw, 12px) 0;
+  border-left: 3px solid transparent;
+  padding-left: clamp(15px, 4vw, 20px);
+  transition: all 0.3s ease;
+  position: relative;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.cyberpunk-log-entry::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 0, 255, 0.2), transparent);
+  transition: width 0.3s ease;
+}
+
+.cyberpunk-log-entry:active::before {
+  width: 100%;
+}
+
+.cyberpunk-log-entry:active {
+  background: rgba(255, 0, 255, 0.05);
+  border-left-color: var(--cyberpunk-magenta);
+}
+
+.cyberpunk-log-entry.user {
+  border-left-color: var(--cyberpunk-green);
+}
+
+.cyberpunk-log-entry.admin {
+  border-left-color: var(--cyberpunk-cyan);
+}
+
+.cyberpunk-timestamp {
+  color: var(--cyberpunk-pink);
+  font-size: clamp(9px, 2.2vw, 11px);
+  min-width: clamp(70px, 18vw, 90px);
+  font-weight: 400;
+  font-family: 'Orbitron', monospace;
+  text-shadow: 0 0 3px var(--cyberpunk-pink);
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.cyberpunk-sender {
+  color: var(--cyberpunk-cyan);
+  font-weight: 700;
+  min-width: clamp(50px, 12vw, 70px);
+  font-family: 'Orbitron', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 8px var(--cyberpunk-cyan);
+  flex-shrink: 0;
+  font-size: clamp(10px, 2.5vw, 12px);
+}
+
+.cyberpunk-log-entry.user .cyberpunk-sender {
+  color: var(--cyberpunk-green);
+  text-shadow: 0 0 8px var(--cyberpunk-green);
+}
+
+.cyberpunk-content {
+  color: #ffffff;
+  flex: 1;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.3);
+  font-size: clamp(11px, 2.8vw, 14px);
+  line-height: 1.5;
+}
+
+/* Command Input */
+.cyberpunk-command-input {
+  background: linear-gradient(90deg, #1a0033, #330066, #1a0033);
+  padding: clamp(15px, 4vw, 20px);
+  border-top: 2px solid var(--cyberpunk-magenta);
+  display: flex;
+  align-items: center;
+  gap: clamp(10px, 2.5vw, 12px);
+  z-index: 2;
+  position: relative;
+  min-height: 70px;
+}
+
+.cyberpunk-input-prompt {
+  color: var(--cyberpunk-magenta);
+  font-weight: bold;
+  white-space: nowrap;
+  font-family: 'Orbitron', monospace;
+  text-shadow: 0 0 8px var(--cyberpunk-magenta);
+  font-size: clamp(11px, 2.8vw, 14px);
+  flex-shrink: 0;
+}
+
+.cyberpunk-terminal-input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid var(--cyberpunk-cyan);
+  color: #ffffff;
+  font-family: inherit;
+  font-size: clamp(12px, 3vw, 14px);
+  outline: none;
+  padding: clamp(10px, 2.5vw, 12px) clamp(12px, 3vw, 16px);
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.5);
+  min-height: 44px;
+}
+
+.cyberpunk-terminal-input:focus {
+  border-color: var(--cyberpunk-magenta);
+  box-shadow: 
+    0 0 15px rgba(255, 0, 255, 0.4),
+    inset 0 0 15px rgba(255, 0, 255, 0.1);
+  background: rgba(255, 0, 255, 0.1);
+}
+
+.cyberpunk-terminal-input::placeholder {
+  color: #888;
+  font-style: italic;
+}
+
+.cyberpunk-cursor {
+  color: var(--cyberpunk-magenta);
+  font-weight: bold;
+  animation: cyberpunk-cursor 1s infinite;
+  text-shadow: 0 0 8px var(--cyberpunk-magenta);
+  font-size: clamp(14px, 3.5vw, 16px);
+  flex-shrink: 0;
+}
+
+/* Send Button */
+.cyberpunk-send-button {
+  background: linear-gradient(135deg, var(--cyberpunk-magenta), var(--cyberpunk-cyan));
+  border: none;
+  color: #000;
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  font-size: clamp(12px, 3vw, 14px);
+  padding: clamp(10px, 2.5vw, 12px) clamp(12px, 3vw, 16px);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.4);
+  min-height: 44px;
+  min-width: 60px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  touch-action: manipulation;
+}
+
+.cyberpunk-send-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
+}
+
+/* System Messages */
+.cyberpunk-system-message {
+  color: var(--cyberpunk-yellow);
+  font-style: italic;
+  margin: clamp(12px, 3vw, 15px) 0;
+  padding: clamp(12px, 3vw, 15px);
+  background: linear-gradient(135deg, rgba(255, 255, 0, 0.1), rgba(255, 165, 0, 0.1));
+  border: 2px solid var(--cyberpunk-yellow);
+  border-radius: 6px;
+  font-family: 'Orbitron', monospace;
+  text-shadow: 0 0 8px var(--cyberpunk-yellow);
+  box-shadow: 0 0 15px rgba(255, 255, 0, 0.2);
+  animation: system-glow 3s ease-in-out infinite alternate;
+  font-size: clamp(10px, 2.5vw, 12px);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* CYBERPUNK ANIMATIONS */
+@keyframes cyberpunk-glow {
+  0% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+@keyframes scanlines {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(4px); }
+}
+
+@keyframes neon-sweep {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+@keyframes neon-pulse {
+  0% { box-shadow: 0 0 15px rgba(255, 0, 255, 0.6); }
+  100% { box-shadow: 0 0 25px rgba(255, 0, 255, 1), 0 0 35px rgba(0, 255, 255, 0.5); }
+}
+
+@keyframes neon-flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+@keyframes cyberpunk-active {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.01); }
+}
+
+@keyframes cyberpunk-online {
+  0%, 100% { text-shadow: 0 0 8px var(--cyberpunk-green); }
+  50% { text-shadow: 0 0 15px var(--cyberpunk-green), 0 0 25px var(--cyberpunk-green); }
+}
+
+@keyframes cyberpunk-connection {
+  0%, 100% { transform: scale(1); color: var(--cyberpunk-green); }
+  50% { transform: scale(1.1); color: var(--cyberpunk-cyan); }
+}
+
+@keyframes cyberpunk-background {
+  0% { opacity: 0.8; }
+  100% { opacity: 1; }
+}
+
+@keyframes cyberpunk-cursor {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes system-glow {
+  0% { box-shadow: 0 0 15px rgba(255, 255, 0, 0.2); }
+  100% { box-shadow: 0 0 25px rgba(255, 255, 0, 0.4); }
+}
+
+/* Loading animation */
+.cyberpunk-loading-dots::after {
+  content: '';
+  animation: cyberpunk-loading 1.5s infinite;
+}
+
+@keyframes cyberpunk-loading {
+  0% { content: ''; }
+  25% { content: '▸'; }
+  50% { content: '▸▸'; }
+  75% { content: '▸▸▸'; }
+  100% { content: ''; }
+}
+
+/* Cyberpunk Scrollbar */
+.cyberpunk-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cyberpunk-scroll::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, #1a0033, #330066);
+}
+
+.cyberpunk-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--cyberpunk-magenta), var(--cyberpunk-cyan));
+  border-radius: 3px;
+  box-shadow: 0 0 5px rgba(255, 0, 255, 0.5);
+}
+
+.cyberpunk-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--cyberpunk-cyan), var(--cyberpunk-magenta));
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.7);
+}
+
+/* Performance optimizations */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.cyberpunk-terminal-workspace,
+.cyberpunk-chat-terminal,
+.cyberpunk-message-output {
+  contain: layout style paint;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+  .cyberpunk-tabs .cyberpunk-tab {
+    font-size: 10px;
+    padding: 4px 8px;
+    letter-spacing: 0.5px;
+  }
+  
+  .cyberpunk-controls {
+    gap: 4px;
+  }
+  
+  .cyberpunk-control {
+    width: 14px;
+    height: 14px;
+    font-size: 8px;
+  }
+  
+  .cyberpunk-body {
+    font-size: 12px;
+  }
+  
+  .cyberpunk-message-output {
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .cyberpunk-log-entry {
+    gap: 8px;
+    padding: 8px 0;
+    padding-left: 12px;
+  }
+  
+  .cyberpunk-timestamp {
+    min-width: 60px;
+    font-size: 9px;
+  }
+  
+  .cyberpunk-sender {
+    min-width: 45px;
+    font-size: 10px;
+  }
+  
+  .cyberpunk-content {
+    font-size: 11px;
+  }
+  
+  .cyberpunk-command-input {
+    padding: 12px;
+    gap: 8px;
+    min-height: 60px;
+  }
+  
+  .cyberpunk-terminal-input {
+    font-size: 12px;
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+  
+  .cyberpunk-send-button {
+    font-size: 10px;
+    padding: 8px 12px;
+    min-height: 40px;
+    min-width: 50px;
+  }
+}
+
+/* Prevent zoom on input focus on iOS */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  .cyberpunk-terminal-input {
+    font-size: 16px;
+  }
 }

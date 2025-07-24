@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design 2B: Matrix Hacker Terminal - Admin Chat Interface</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Share+Tech+Mono:wght@400&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            background: #0d1b0d;
+            color: #00ff41;
+            min-height: 100vh;
+            overflow: hidden;
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        /* Matrix Rain Background */
+        .matrix-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .matrix-column {
+            position: absolute;
+            top: -100%;
+            color: #00ff41;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            line-height: 1.2;
+            text-shadow: 0 0 5px #00ff41;
+            animation: matrix-fall linear infinite;
+        }
+
+        @keyframes matrix-fall {
+            0% { 
+                top: -100%; 
+                opacity: 0; 
+            }
+            10% { 
+                opacity: 1; 
+            }
+            90% { 
+                opacity: 1; 
+            }
+            100% { 
+                top: 100%; 
+                opacity: 0; 
+            }
+        }
+
+        /* CRT Screen Effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(0, 255, 65, 0.03) 2px,
+                    rgba(0, 255, 65, 0.03) 4px
+                );
+            pointer-events: none;
+            z-index: 999;
+            animation: crt-flicker 0.15s linear infinite;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+            pointer-events: none;
+            z-index: 998;
+        }
+
+        /* Terminal Header */
+        .terminal-header {
+            background: linear-gradient(90deg, #0d1b0d, #1a2f1a, #0d1b0d);
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            border-bottom: 2px solid #32cd32;
+            box-shadow: 
+                0 0 20px rgba(50, 205, 50, 0.4),
+                inset 0 1px 0 rgba(0, 255, 65, 0.2);
+            position: relative;
+        }
+
+        .terminal-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                rgba(0, 255, 65, 0.1) 50%, 
+                transparent 100%);
+            animation: matrix-sweep 4s ease-in-out infinite;
+        }
+
+        .terminal-tabs {
+            display: flex;
+            gap: 15px;
+            z-index: 2;
+        }
+
+        .tab {
+            background: linear-gradient(135deg, #1a2f1a, #0d1b0d);
+            padding: 8px 16px;
+            border-radius: 6px 6px 0 0;
+            font-size: 12px;
+            color: #32cd32;
+            position: relative;
+            font-family: 'Courier Prime', monospace;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: 1px solid #32cd32;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 5px #00ff41;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #00ff41, #32cd32);
+            color: #000;
+            box-shadow: 
+                0 0 15px rgba(0, 255, 65, 0.6),
+                inset 0 0 10px rgba(255, 255, 255, 0.1);
+            animation: matrix-active-tab 2s ease-in-out infinite alternate;
+        }
+
+        .tab:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 255, 65, 0.3);
+        }
+
+        .terminal-controls {
+            display: flex;
+            gap: 8px;
+            z-index: 2;
+        }
+
+        .control {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier Prime', monospace;
+            font-weight: 700;
+            border: 1px solid currentColor;
+        }
+
+        .control.minimize { 
+            background: #39ff14;
+            color: #000;
+            box-shadow: 0 0 8px rgba(57, 255, 20, 0.6);
+        }
+        .control.maximize { 
+            background: #32cd32;
+            color: #000;
+            box-shadow: 0 0 8px rgba(50, 205, 50, 0.6);
+        }
+        .control.close { 
+            background: #ff4444;
+            color: #fff;
+            box-shadow: 0 0 8px rgba(255, 68, 68, 0.6);
+        }
+
+        .control:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        /* Terminal Workspace */
+        .terminal-workspace {
+            display: flex;
+            height: calc(100vh - 40px);
+        }
+
+        /* Command Panel */
+        .command-panel {
+            width: 380px;
+            background: linear-gradient(180deg, #0a140a, #1a2f1a, #0a140a);
+            border-right: 2px solid #32cd32;
+            padding: 25px;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
+        }
+
+        .command-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                repeating-linear-gradient(
+                    45deg,
+                    transparent,
+                    transparent 25px,
+                    rgba(0, 255, 65, 0.02) 25px,
+                    rgba(0, 255, 65, 0.02) 50px
+                );
+            pointer-events: none;
+        }
+
+        .terminal-prompt {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .prompt-symbol {
+            color: #00ff41;
+            font-weight: bold;
+            font-size: 18px;
+            text-shadow: 0 0 10px #00ff41;
+            animation: matrix-prompt 1s ease-in-out infinite alternate;
+        }
+
+        .command-path {
+            color: #32cd32;
+            font-size: 14px;
+            font-family: 'Courier Prime', monospace;
+            text-shadow: 0 0 8px #32cd32;
+        }
+
+        .conversation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .conversation-entry {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            background: linear-gradient(135deg, rgba(0, 255, 65, 0.05), rgba(50, 205, 50, 0.05));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .conversation-entry::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(0, 255, 65, 0.2), 
+                transparent);
+            transition: left 0.6s ease;
+        }
+
+        .conversation-entry:hover::before {
+            left: 100%;
+        }
+
+        .conversation-entry:hover {
+            background: linear-gradient(135deg, rgba(0, 255, 65, 0.1), rgba(50, 205, 50, 0.1));
+            border-color: #00ff41;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.2);
+            transform: translateX(3px);
+        }
+
+        .conversation-entry.active {
+            background: linear-gradient(135deg, #00ff41, #32cd32);
+            color: #000;
+            border-color: #39ff14;
+            box-shadow: 
+                0 0 25px rgba(0, 255, 65, 0.4),
+                inset 0 0 15px rgba(255, 255, 255, 0.1);
+            animation: matrix-active-conversation 3s ease-in-out infinite alternate;
+        }
+
+        .conversation-entry.active .unread-count {
+            background: #000;
+            color: #00ff41;
+            box-shadow: 0 0 8px #00ff41;
+        }
+
+        .file-icon {
+            font-size: 18px;
+            filter: drop-shadow(0 0 3px currentColor);
+        }
+
+        .user-name {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: 'Courier Prime', monospace;
+            text-transform: lowercase;
+            letter-spacing: 0.5px;
+        }
+
+        .unread-count {
+            background: linear-gradient(135deg, #00ff41, #32cd32);
+            color: #000;
+            padding: 3px 7px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            font-family: 'Courier Prime', monospace;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.4);
+            animation: matrix-notification 2s ease-in-out infinite alternate;
+        }
+
+        .conversation-entry.online::before {
+            content: '●';
+            color: #39ff14;
+            margin-right: 8px;
+            font-size: 14px;
+            animation: matrix-online-pulse 2s infinite;
+            text-shadow: 0 0 8px #39ff14;
+        }
+
+        .conversation-entry.offline::before {
+            content: '●';
+            color: #666;
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        /* Chat Terminal */
+        .chat-terminal {
+            flex: 1;
+            background: linear-gradient(180deg, #0a140a, #0d1b0d, #0a140a);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .chat-terminal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 25% 30%, rgba(0, 255, 65, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 75% 70%, rgba(50, 205, 50, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            animation: matrix-ambient 12s ease-in-out infinite alternate;
+        }
+
+        .chat-header {
+            background: linear-gradient(90deg, #0d1b0d, #1a2f1a, #0d1b0d);
+            padding: 20px;
+            border-bottom: 2px solid #32cd32;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 2;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0, 255, 65, 0.2);
+        }
+
+        .terminal-title {
+            color: #00ff41;
+            font-weight: 700;
+            font-size: 16px;
+            font-family: 'Courier Prime', monospace;
+            text-transform: lowercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 12px #00ff41;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #39ff14;
+            font-family: 'Courier Prime', monospace;
+            text-transform: lowercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 8px #39ff14;
+        }
+
+        .connection-status::before {
+            content: '●';
+            animation: matrix-connection-status 1.5s infinite;
+            font-size: 12px;
+        }
+
+        /* Message Output */
+        .message-output {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-family: 'Share Tech Mono', monospace;
+            z-index: 2;
+            position: relative;
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-left: 3px solid transparent;
+            padding-left: 18px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .log-entry::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.1), transparent);
+            transition: width 0.4s ease;
+        }
+
+        .log-entry:hover::before {
+            width: 100%;
+        }
+
+        .log-entry:hover {
+            background: rgba(0, 255, 65, 0.03);
+            border-left-color: #00ff41;
+            transform: translateX(3px);
+        }
+
+        .log-entry.user {
+            border-left-color: #39ff14;
+        }
+
+        .log-entry.admin {
+            border-left-color: #32cd32;
+        }
+
+        .timestamp {
+            color: #228b22;
+            font-size: 11px;
+            min-width: 85px;
+            font-weight: 400;
+            font-family: 'Courier Prime', monospace;
+            text-shadow: 0 0 3px #228b22;
+        }
+
+        .sender {
+            color: #32cd32;
+            font-weight: 700;
+            min-width: 65px;
+            font-family: 'Courier Prime', monospace;
+            text-transform: lowercase;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 8px #32cd32;
+        }
+
+        .log-entry.user .sender {
+            color: #39ff14;
+            text-shadow: 0 0 8px #39ff14;
+        }
+
+        .content {
+            color: #00ff41;
+            flex: 1;
+            word-wrap: break-word;
+            text-shadow: 0 0 3px rgba(0, 255, 65, 0.3);
+        }
+
+        /* Command Input */
+        .command-input {
+            background: linear-gradient(90deg, #0d1b0d, #1a2f1a, #0d1b0d);
+            padding: 20px;
+            border-top: 2px solid #32cd32;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 2;
+            position: relative;
+            box-shadow: 0 -2px 10px rgba(0, 255, 65, 0.2);
+        }
+
+        .input-prompt {
+            color: #00ff41;
+            font-weight: bold;
+            white-space: nowrap;
+            font-family: 'Courier Prime', monospace;
+            text-shadow: 0 0 8px #00ff41;
+            font-size: 14px;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #32cd32;
+            color: #00ff41;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            padding: 12px 16px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 3px rgba(0, 255, 65, 0.5);
+        }
+
+        .terminal-input:focus {
+            border-color: #39ff14;
+            box-shadow: 
+                0 0 15px rgba(57, 255, 20, 0.3),
+                inset 0 0 15px rgba(0, 255, 65, 0.1);
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .terminal-input::placeholder {
+            color: #555;
+            font-style: italic;
+        }
+
+        /* Cursor animation */
+        .cursor {
+            color: #00ff41;
+            font-weight: bold;
+            animation: matrix-cursor 1s infinite;
+            text-shadow: 0 0 8px #00ff41;
+            font-size: 16px;
+        }
+
+        /* System messages */
+        .system-message {
+            color: #39ff14;
+            font-style: italic;
+            margin: 15px 0;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(57, 255, 20, 0.05), rgba(0, 255, 65, 0.05));
+            border: 2px solid #39ff14;
+            border-radius: 6px;
+            font-family: 'Courier Prime', monospace;
+            text-shadow: 0 0 8px #39ff14;
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.1);
+            animation: matrix-system-glow 4s ease-in-out infinite alternate;
+        }
+
+        /* Animations */
+        @keyframes crt-flicker {
+            0%, 100% { opacity: 1; }
+            99% { opacity: 1; }
+            99.9% { opacity: 0.98; }
+        }
+
+        @keyframes matrix-sweep {
+            0%, 100% { transform: translateX(-100%); }
+            50% { transform: translateX(100%); }
+        }
+
+        @keyframes matrix-active-tab {
+            0% { box-shadow: 0 0 15px rgba(0, 255, 65, 0.6); }
+            100% { box-shadow: 0 0 25px rgba(0, 255, 65, 0.8), 0 0 35px rgba(57, 255, 20, 0.4); }
+        }
+
+        @keyframes matrix-prompt {
+            0%, 100% { opacity: 1; text-shadow: 0 0 10px #00ff41; }
+            50% { opacity: 0.7; text-shadow: 0 0 15px #00ff41; }
+        }
+
+        @keyframes matrix-active-conversation {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.01); }
+        }
+
+        @keyframes matrix-notification {
+            0% { box-shadow: 0 0 10px rgba(0, 255, 65, 0.4); }
+            100% { box-shadow: 0 0 15px rgba(0, 255, 65, 0.6); }
+        }
+
+        @keyframes matrix-online-pulse {
+            0%, 100% { 
+                text-shadow: 0 0 8px #39ff14; 
+                transform: scale(1); 
+            }
+            50% { 
+                text-shadow: 0 0 15px #39ff14, 0 0 25px #39ff14; 
+                transform: scale(1.1); 
+            }
+        }
+
+        @keyframes matrix-connection-status {
+            0%, 100% { transform: scale(1); color: #39ff14; }
+            50% { transform: scale(1.1); color: #00ff41; }
+        }
+
+        @keyframes matrix-ambient {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes matrix-cursor {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        @keyframes matrix-system-glow {
+            0% { box-shadow: 0 0 15px rgba(57, 255, 20, 0.1); }
+            100% { box-shadow: 0 0 25px rgba(57, 255, 20, 0.2); }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: linear-gradient(180deg, #0d1b0d, #1a2f1a);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #32cd32, #00ff41);
+            border-radius: 4px;
+            box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #39ff14, #32cd32);
+            box-shadow: 0 0 12px rgba(57, 255, 20, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .terminal-workspace {
+                flex-direction: column;
+            }
+            
+            .command-panel {
+                width: 100%;
+                height: 40vh;
+                border-right: none;
+                border-bottom: 2px solid #32cd32;
+            }
+            
+            .chat-terminal {
+                height: 60vh;
+            }
+            
+            .conversation-list {
+                flex-direction: row;
+                overflow-x: auto;
+                gap: 15px;
+                padding-bottom: 15px;
+            }
+            
+            .conversation-entry {
+                min-width: 220px;
+            }
+        }
+
+        /* Loading animation */
+        .loading-dots::after {
+            content: '';
+            animation: matrix-loading 1.5s infinite;
+        }
+
+        @keyframes matrix-loading {
+            0% { content: ''; }
+            25% { content: '█'; }
+            50% { content: '██'; }
+            75% { content: '███'; }
+            100% { content: ''; }
+        }
+
+        /* Matrix digital rain characters */
+        .matrix-char {
+            display: inline-block;
+            animation: matrix-char-glow 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes matrix-char-glow {
+            0% { text-shadow: 0 0 5px #00ff41; }
+            100% { text-shadow: 0 0 10px #00ff41, 0 0 15px #32cd32; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Matrix Rain Background -->
+    <div class="matrix-rain" id="matrixRain"></div>
+
+    <!-- Terminal Header -->
+    <header class="terminal-header">
+        <div class="terminal-tabs">
+            <span class="tab active">matrix-terminal ~/admin</span>
+        </div>
+        <div class="terminal-controls">
+            <div class="control minimize">−</div>
+            <div class="control maximize">□</div>
+            <div class="control close">✕</div>
+        </div>
+    </header>
+
+    <!-- Terminal Workspace -->
+    <main class="terminal-workspace">
+        <!-- Command Panel -->
+        <section class="command-panel">
+            <div class="terminal-prompt">
+                <span class="prompt-symbol">$</span>
+                <span class="command-path">~/matrix/conversations</span>
+            </div>
+            
+            <div class="conversation-list">
+                <div class="conversation-entry online active">
+                    <span class="file-icon">📋</span>
+                    <span class="user-name">user1@matrix.net</span>
+                    <span class="unread-count">[3]</span>
+                </div>
+                
+                <div class="conversation-entry online">
+                    <span class="file-icon">📋</span>
+                    <span class="user-name">user2@zion.org</span>
+                    <span class="unread-count">[1]</span>
+                </div>
+                
+                <div class="conversation-entry offline">
+                    <span class="file-icon">📁</span>
+                    <span class="user-name">user3@nebuchadnezzar.ship</span>
+                    <span class="unread-count">[0]</span>
+                </div>
+                
+                <div class="conversation-entry online">
+                    <span class="file-icon">📋</span>
+                    <span class="user-name">support@matrix.system</span>
+                    <span class="unread-count">[2]</span>
+                </div>
+                
+                <div class="conversation-entry offline">
+                    <span class="file-icon">📁</span>
+                    <span class="user-name">test@redpill.access</span>
+                    <span class="unread-count">[0]</span>
+                </div>
+            </div>
+
+            <div class="system-message">
+                <strong>matrix:</strong> 5 active connections | 6 encrypted transmissions | system online
+            </div>
+        </section>
+
+        <!-- Chat Terminal -->
+        <section class="chat-terminal">
+            <div class="chat-header">
+                <span class="terminal-title">session: user1@matrix.net</span>
+                <span class="connection-status">connected to matrix</span>
+            </div>
+            
+            <div class="message-output" id="messageOutput">
+                <div class="log-entry user">
+                    <span class="timestamp">[16:30:45]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Xin chào, tôi cần hỗ trợ với tài khoản của mình</span>
+                </div>
+                
+                <div class="log-entry admin">
+                    <span class="timestamp">[16:31:02]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?</span>
+                </div>
+                
+                <div class="log-entry user">
+                    <span class="timestamp">[16:31:15]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Tôi không thể đăng nhập được, nó báo lỗi "Email hoặc mật khẩu không đúng"</span>
+                </div>
+                
+                <div class="log-entry admin">
+                    <span class="timestamp">[16:31:28]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">Tôi hiểu vấn đề. Để kiểm tra, bạn có thể xác nhận email đăng ký không?</span>
+                </div>
+                
+                <div class="log-entry user">
+                    <span class="timestamp">[16:31:45]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Đúng rồi, email là user1@matrix.net</span>
+                </div>
+                
+                <div class="system-message">
+                    <strong>info:</strong> user typing <span class="loading-dots"></span>
+                </div>
+            </div>
+            
+            <div class="command-input">
+                <span class="input-prompt">admin@matrix:~$</span>
+                <input type="text" class="terminal-input" placeholder="nhập tin nhắn vào matrix..." id="messageInput" />
+                <span class="cursor">█</span>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Matrix Rain Effect
+        function createMatrixRain() {
+            const matrixRain = document.getElementById('matrixRain');
+            const matrixChars = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            
+            const screenWidth = window.innerWidth;
+            const fontSize = 14;
+            const columns = Math.floor(screenWidth / fontSize);
+            
+            for (let i = 0; i < columns; i++) {
+                const column = document.createElement('div');
+                column.className = 'matrix-column';
+                column.style.left = i * fontSize + 'px';
+                column.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                column.style.animationDelay = Math.random() * 2 + 's';
+                
+                let columnText = '';
+                const columnHeight = Math.floor(Math.random() * 20 + 10);
+                for (let j = 0; j < columnHeight; j++) {
+                    const char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                    columnText += `<span class="matrix-char">${char}</span><br>`;
+                }
+                
+                column.innerHTML = columnText;
+                matrixRain.appendChild(column);
+            }
+            
+            // Refresh rain columns periodically
+            setTimeout(() => {
+                matrixRain.innerHTML = '';
+                createMatrixRain();
+            }, 10000);
+        }
+
+        // Initialize matrix rain
+        createMatrixRain();
+
+        // Terminal functionality
+        const messageInput = document.getElementById('messageInput');
+        const messageOutput = document.getElementById('messageOutput');
+        const cursor = document.querySelector('.cursor');
+        const conversationEntries = document.querySelectorAll('.conversation-entry');
+
+        // Enhanced focus management with matrix effects
+        messageInput.addEventListener('focus', () => {
+            cursor.style.animation = 'matrix-cursor 0.8s infinite';
+        });
+
+        messageInput.addEventListener('blur', () => {
+            cursor.style.animation = 'matrix-cursor 2s infinite';
+        });
+
+        // Auto-focus on load
+        window.addEventListener('load', () => {
+            messageInput.focus();
+        });
+
+        // Enhanced send message with matrix effects
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message) {
+                const timestamp = new Date().toLocaleTimeString('vi-VN', { 
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry admin';
+                logEntry.innerHTML = `
+                    <span class="timestamp">[${timestamp}]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">${message}</span>
+                `;
+                
+                // Add matrix entrance effect
+                logEntry.style.opacity = '0';
+                logEntry.style.transform = 'translateX(-15px)';
+                messageOutput.appendChild(logEntry);
+                
+                // Animate in
+                setTimeout(() => {
+                    logEntry.style.transition = 'all 0.4s ease';
+                    logEntry.style.opacity = '1';
+                    logEntry.style.transform = 'translateX(0)';
+                }, 10);
+                
+                messageInput.value = '';
+                messageOutput.scrollTop = messageOutput.scrollHeight;
+
+                // Matrix system message
+                setTimeout(() => {
+                    const systemMsg = document.createElement('div');
+                    systemMsg.className = 'system-message';
+                    systemMsg.innerHTML = '<strong>transmission:</strong> message uploaded to matrix successfully';
+                    messageOutput.appendChild(systemMsg);
+                    messageOutput.scrollTop = messageOutput.scrollHeight;
+                    
+                    setTimeout(() => {
+                        systemMsg.style.transition = 'all 0.4s ease';
+                        systemMsg.style.opacity = '0';
+                        systemMsg.style.transform = 'translateY(-15px)';
+                        setTimeout(() => systemMsg.remove(), 400);
+                    }, 2500);
+                }, 600);
+            }
+        }
+
+        // Enter key handling
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Enhanced conversation switching
+        conversationEntries.forEach(entry => {
+            entry.addEventListener('click', function() {
+                // Remove active class from all entries
+                conversationEntries.forEach(e => e.classList.remove('active'));
+                // Add active class to clicked entry
+                this.classList.add('active');
+                
+                // Update terminal title
+                const username = this.querySelector('.user-name').textContent;
+                document.querySelector('.terminal-title').textContent = `session: ${username}`;
+                
+                // Clear and simulate loading new conversation
+                messageOutput.innerHTML = `
+                    <div class="system-message">
+                        <strong>loading:</strong> accessing matrix records for ${username}<span class="loading-dots"></span>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    messageOutput.innerHTML = `
+                        <div class="log-entry user">
+                            <span class="timestamp">[${new Date().toLocaleTimeString('vi-VN', { hour12: false })}]</span>
+                            <span class="sender">user:</span>
+                            <span class="content">Chào admin, tôi có thể được hỗ trợ không?</span>
+                        </div>
+                    `;
+                }, 1200);
+            });
+        });
+
+        // Matrix command simulation
+        messageInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            
+            // Handle special matrix commands
+            if (value.startsWith('/')) {
+                if (value === '/neo') {
+                    messageOutput.innerHTML += `
+                        <div class="system-message">
+                            <strong>matrix:</strong> "There is no spoon" - Wake up, Neo...
+                        </div>
+                    `;
+                    messageInput.value = '';
+                } else if (value === '/clear') {
+                    messageOutput.innerHTML = '';
+                    messageInput.value = '';
+                } else if (value === '/status') {
+                    const systemMsg = document.createElement('div');
+                    systemMsg.className = 'system-message';
+                    systemMsg.innerHTML = '<strong>matrix status:</strong> all systems operational | 5 users jacked in | reality.exe running';
+                    messageOutput.appendChild(systemMsg);
+                    messageInput.value = '';
+                    messageOutput.scrollTop = messageOutput.scrollHeight;
+                } else if (value === '/redpill') {
+                    // Easter egg: Red pill mode
+                    document.body.style.filter = 'hue-rotate(180deg) saturate(1.5)';
+                    setTimeout(() => {
+                        document.body.style.filter = 'none';
+                    }, 5000);
+                    messageInput.value = '';
+                } else if (value === '/zion') {
+                    messageOutput.innerHTML += `
+                        <div class="system-message">
+                            <strong>zion mainframe:</strong> Welcome to the real world
+                        </div>
+                    `;
+                    messageInput.value = '';
+                }
+            }
+        });
+
+        // Enhanced real-time matrix updates
+        setInterval(() => {
+            const matrixMessages = [
+                'Agent Smith detected in sector 7',
+                'New user unplugged from matrix',
+                'Nebuchadnezzar requesting docking',
+                'Oracle has sent a new prophecy',
+                'Zion defenses are holding',
+                'Morpheus is broadcasting on all frequencies'
+            ];
+            
+            if (Math.random() > 0.88) {
+                const systemMsg = document.createElement('div');
+                systemMsg.className = 'system-message';
+                systemMsg.innerHTML = `<strong>matrix alert:</strong> ${matrixMessages[Math.floor(Math.random() * matrixMessages.length)]}`;
+                messageOutput.appendChild(systemMsg);
+                messageOutput.scrollTop = messageOutput.scrollHeight;
+                
+                setTimeout(() => {
+                    systemMsg.style.transition = 'all 0.4s ease';
+                    systemMsg.style.opacity = '0';
+                    systemMsg.style.transform = 'translateY(-15px)';
+                    setTimeout(() => systemMsg.remove(), 400);
+                }, 5000);
+            }
+        }, 7000);
+
+        // Matrix glitch effects
+        setInterval(() => {
+            const textElements = document.querySelectorAll('.content, .user-name, .terminal-title');
+            textElements.forEach(element => {
+                if (Math.random() > 0.95) {
+                    const originalText = element.textContent;
+                    const glitchedText = originalText.split('').map(char => 
+                        Math.random() > 0.8 ? 'アカサタナハマヤラワ'[Math.floor(Math.random() * 10)] : char
+                    ).join('');
+                    
+                    element.textContent = glitchedText;
+                    setTimeout(() => {
+                        element.textContent = originalText;
+                    }, 100);
+                }
+            });
+        }, 3000);
+
+        // Matrix typing sound simulation (visual feedback)
+        messageInput.addEventListener('keydown', () => {
+            messageInput.style.boxShadow = '0 0 20px rgba(57, 255, 20, 0.4)';
+            setTimeout(() => {
+                messageInput.style.boxShadow = '0 0 15px rgba(57, 255, 20, 0.3)';
+            }, 150);
+        });
+
+        // Random matrix character insertion
+        setInterval(() => {
+            if (Math.random() > 0.92 && document.activeElement !== messageInput) {
+                const matrixChar = 'アカサタナハマヤラワ'[Math.floor(Math.random() * 10)];
+                const randomElement = document.createElement('span');
+                randomElement.textContent = matrixChar;
+                randomElement.style.position = 'fixed';
+                randomElement.style.left = Math.random() * window.innerWidth + 'px';
+                randomElement.style.top = Math.random() * window.innerHeight + 'px';
+                randomElement.style.color = '#00ff41';
+                randomElement.style.fontSize = '12px';
+                randomElement.style.pointerEvents = 'none';
+                randomElement.style.zIndex = '999';
+                randomElement.style.textShadow = '0 0 5px #00ff41';
+                document.body.appendChild(randomElement);
+                
+                setTimeout(() => {
+                    randomElement.style.transition = 'all 1s ease';
+                    randomElement.style.opacity = '0';
+                    randomElement.style.transform = 'translateY(-50px)';
+                    setTimeout(() => randomElement.remove(), 1000);
+                }, 2000);
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

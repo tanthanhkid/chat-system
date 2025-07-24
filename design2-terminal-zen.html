@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design 2: Command Terminal Zen - Admin Chat Interface</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
+            background: #0a0e1a;
+            color: #c5d1eb;
+            min-height: 100vh;
+            overflow: hidden;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Terminal Header */
+        .terminal-header {
+            background: #1a1f2e;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            border-bottom: 1px solid #2a2f3e;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .terminal-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .tab {
+            background: #2a2f3e;
+            padding: 5px 12px;
+            border-radius: 5px 5px 0 0;
+            font-size: 12px;
+            color: #8b949e;
+            position: relative;
+        }
+
+        .tab.active {
+            background: #0a0e1a;
+            color: #1e9df1;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #0a0e1a;
+        }
+
+        .terminal-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .control.minimize { background: #fbbf24; }
+        .control.maximize { background: #10b981; }
+        .control.close { background: #ef4444; }
+
+        .control:hover {
+            transform: scale(1.1);
+            opacity: 0.8;
+        }
+
+        /* Terminal Workspace */
+        .terminal-workspace {
+            display: flex;
+            height: calc(100vh - 35px);
+        }
+
+        /* Command Panel */
+        .command-panel {
+            width: 350px;
+            background: #0f1419;
+            border-right: 1px solid #2a2f3e;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .terminal-prompt {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .prompt-symbol {
+            color: #1e9df1;
+            font-weight: bold;
+        }
+
+        .command-path {
+            color: #6b7280;
+            font-size: 12px;
+        }
+
+        .conversation-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .conversation-entry {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .conversation-entry:hover {
+            background: #1a1f2e;
+            border-color: #2a2f3e;
+        }
+
+        .conversation-entry.active {
+            background: #1e9df1;
+            color: #0a0e1a;
+        }
+
+        .conversation-entry.active .unread-count {
+            background: #0a0e1a;
+            color: #1e9df1;
+        }
+
+        .file-icon {
+            font-size: 16px;
+        }
+
+        .user-name {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .unread-count {
+            background: #1e9df1;
+            color: #0a0e1a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .conversation-entry.online::before {
+            content: '●';
+            color: #10b981;
+            margin-right: 5px;
+            animation: pulse-green 2s infinite;
+        }
+
+        .conversation-entry.offline::before {
+            content: '●';
+            color: #6b7280;
+            margin-right: 5px;
+        }
+
+        /* Chat Terminal */
+        .chat-terminal {
+            flex: 1;
+            background: #0a0e1a;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: #1a1f2e;
+            padding: 15px 20px;
+            border-bottom: 1px solid #2a2f3e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-title {
+            color: #1e9df1;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: #10b981;
+        }
+
+        .connection-status::before {
+            content: '●';
+            animation: pulse-green 2s infinite;
+        }
+
+        /* Message Output */
+        .message-output {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 8px 0;
+            border-left: 3px solid transparent;
+            padding-left: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .log-entry:hover {
+            background: rgba(30, 157, 241, 0.05);
+            border-left-color: #1e9df1;
+        }
+
+        .log-entry.user {
+            border-left-color: #10b981;
+        }
+
+        .log-entry.admin {
+            border-left-color: #1e9df1;
+        }
+
+        .timestamp {
+            color: #6b7280;
+            font-size: 11px;
+            min-width: 80px;
+            font-weight: 400;
+        }
+
+        .sender {
+            color: #1e9df1;
+            font-weight: 600;
+            min-width: 60px;
+        }
+
+        .log-entry.user .sender {
+            color: #10b981;
+        }
+
+        .content {
+            color: #c5d1eb;
+            flex: 1;
+            word-wrap: break-word;
+        }
+
+        /* Command Input */
+        .command-input {
+            background: #1a1f2e;
+            padding: 15px 20px;
+            border-top: 1px solid #2a2f3e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-prompt {
+            color: #1e9df1;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #c5d1eb;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            padding: 5px 0;
+        }
+
+        .terminal-input::placeholder {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        /* Cursor animation */
+        .terminal-input:focus + .cursor,
+        .cursor.active {
+            animation: blink 1s infinite;
+        }
+
+        .cursor {
+            color: #1e9df1;
+            font-weight: bold;
+        }
+
+        /* System messages */
+        .system-message {
+            color: #fbbf24;
+            font-style: italic;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 3px solid #fbbf24;
+            border-radius: 0 4px 4px 0;
+        }
+
+        /* Animations */
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        @keyframes typewriter {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1f2e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2a2f3e;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a3f4e;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .terminal-workspace {
+                flex-direction: column;
+            }
+            
+            .command-panel {
+                width: 100%;
+                height: 40vh;
+                border-right: none;
+                border-bottom: 1px solid #2a2f3e;
+            }
+            
+            .chat-terminal {
+                height: 60vh;
+            }
+            
+            .conversation-list {
+                flex-direction: row;
+                overflow-x: auto;
+                gap: 10px;
+                padding-bottom: 10px;
+            }
+            
+            .conversation-entry {
+                min-width: 200px;
+            }
+        }
+
+        /* Loading animation */
+        .loading-dots::after {
+            content: '';
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+            100% { content: ''; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Terminal Header -->
+    <header class="terminal-header">
+        <div class="terminal-tabs">
+            <span class="tab active">chat-admin ~</span>
+        </div>
+        <div class="terminal-controls">
+            <div class="control minimize">−</div>
+            <div class="control maximize">□</div>
+            <div class="control close">✕</div>
+        </div>
+    </header>
+
+    <!-- Terminal Workspace -->
+    <main class="terminal-workspace">
+        <!-- Command Panel -->
+        <section class="command-panel">
+            <div class="terminal-prompt">
+                <span class="prompt-symbol">$</span>
+                <span class="command-path">~/conversations</span>
+            </div>
+            
+            <div class="conversation-list">
+                <div class="conversation-entry online active">
+                    <span class="file-icon">📧</span>
+                    <span class="user-name">user1@example.com</span>
+                    <span class="unread-count">[3]</span>
+                </div>
+                
+                <div class="conversation-entry online">
+                    <span class="file-icon">📧</span>
+                    <span class="user-name">user2@example.com</span>
+                    <span class="unread-count">[1]</span>
+                </div>
+                
+                <div class="conversation-entry offline">
+                    <span class="file-icon">📁</span>
+                    <span class="user-name">user3@example.com</span>
+                    <span class="unread-count">[0]</span>
+                </div>
+                
+                <div class="conversation-entry online">
+                    <span class="file-icon">📧</span>
+                    <span class="user-name">support@company.com</span>
+                    <span class="unread-count">[2]</span>
+                </div>
+                
+                <div class="conversation-entry offline">
+                    <span class="file-icon">📁</span>
+                    <span class="user-name">test@example.com</span>
+                    <span class="unread-count">[0]</span>
+                </div>
+            </div>
+
+            <div class="system-message">
+                <strong>SYSTEM:</strong> 5 active conversations | 6 unread messages
+            </div>
+        </section>
+
+        <!-- Chat Terminal -->
+        <section class="chat-terminal">
+            <div class="chat-header">
+                <span class="terminal-title">chat-session: user1@example.com</span>
+                <span class="connection-status">connected</span>
+            </div>
+            
+            <div class="message-output" id="messageOutput">
+                <div class="log-entry user">
+                    <span class="timestamp">[16:30:45]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Xin chào, tôi cần hỗ trợ với tài khoản của mình</span>
+                </div>
+                
+                <div class="log-entry admin">
+                    <span class="timestamp">[16:31:02]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">Chào bạn! Tôi có thể giúp gì cho bạn hôm nay?</span>
+                </div>
+                
+                <div class="log-entry user">
+                    <span class="timestamp">[16:31:15]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Tôi không thể đăng nhập được, nó báo lỗi "Email hoặc mật khẩu không đúng"</span>
+                </div>
+                
+                <div class="log-entry admin">
+                    <span class="timestamp">[16:31:28]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">Tôi hiểu vấn đề. Để kiểm tra, bạn có thể xác nhận email đăng ký không?</span>
+                </div>
+                
+                <div class="log-entry user">
+                    <span class="timestamp">[16:31:45]</span>
+                    <span class="sender">user:</span>
+                    <span class="content">Đúng rồi, email là user1@example.com</span>
+                </div>
+                
+                <div class="system-message">
+                    <strong>INFO:</strong> User typing <span class="loading-dots"></span>
+                </div>
+            </div>
+            
+            <div class="command-input">
+                <span class="input-prompt">admin@chat-system:~$</span>
+                <input type="text" class="terminal-input" placeholder="nhập tin nhắn..." id="messageInput" />
+                <span class="cursor">|</span>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Terminal functionality
+        const messageInput = document.getElementById('messageInput');
+        const messageOutput = document.getElementById('messageOutput');
+        const cursor = document.querySelector('.cursor');
+        const conversationEntries = document.querySelectorAll('.conversation-entry');
+
+        // Focus management
+        messageInput.addEventListener('focus', () => {
+            cursor.classList.add('active');
+        });
+
+        messageInput.addEventListener('blur', () => {
+            cursor.classList.remove('active');
+        });
+
+        // Auto-focus on load
+        window.addEventListener('load', () => {
+            messageInput.focus();
+        });
+
+        // Send message
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message) {
+                const timestamp = new Date().toLocaleTimeString('vi-VN', { 
+                    hour12: false,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry admin';
+                logEntry.innerHTML = `
+                    <span class="timestamp">[${timestamp}]</span>
+                    <span class="sender">admin:</span>
+                    <span class="content">${message}</span>
+                `;
+                
+                messageOutput.appendChild(logEntry);
+                messageInput.value = '';
+                messageOutput.scrollTop = messageOutput.scrollHeight;
+
+                // Simulate typing indicator
+                setTimeout(() => {
+                    const systemMsg = document.createElement('div');
+                    systemMsg.className = 'system-message';
+                    systemMsg.innerHTML = '<strong>INFO:</strong> Message sent successfully';
+                    messageOutput.appendChild(systemMsg);
+                    messageOutput.scrollTop = messageOutput.scrollHeight;
+                    
+                    setTimeout(() => {
+                        systemMsg.remove();
+                    }, 2000);
+                }, 500);
+            }
+        }
+
+        // Enter key handling
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Conversation switching
+        conversationEntries.forEach(entry => {
+            entry.addEventListener('click', function() {
+                // Remove active class from all entries
+                conversationEntries.forEach(e => e.classList.remove('active'));
+                // Add active class to clicked entry
+                this.classList.add('active');
+                
+                // Update terminal title
+                const username = this.querySelector('.user-name').textContent;
+                document.querySelector('.terminal-title').textContent = `chat-session: ${username}`;
+                
+                // Clear and simulate loading new conversation
+                messageOutput.innerHTML = `
+                    <div class="system-message">
+                        <strong>LOADING:</strong> Fetching conversation history for ${username}<span class="loading-dots"></span>
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    messageOutput.innerHTML = `
+                        <div class="log-entry user">
+                            <span class="timestamp">[${new Date().toLocaleTimeString('vi-VN', { hour12: false })}]</span>
+                            <span class="sender">user:</span>
+                            <span class="content">Chào admin, tôi có thể được hỗ trợ không?</span>
+                        </div>
+                    `;
+                }, 1000);
+            });
+        });
+
+        // Terminal commands simulation
+        messageInput.addEventListener('input', (e) => {
+            const value = e.target.value;
+            
+            // Handle special commands
+            if (value.startsWith('/')) {
+                if (value === '/help') {
+                    // Show help
+                } else if (value === '/clear') {
+                    messageOutput.innerHTML = '';
+                    messageInput.value = '';
+                } else if (value === '/status') {
+                    const systemMsg = document.createElement('div');
+                    systemMsg.className = 'system-message';
+                    systemMsg.innerHTML = '<strong>STATUS:</strong> All systems operational | 5 active sessions';
+                    messageOutput.appendChild(systemMsg);
+                    messageInput.value = '';
+                    messageOutput.scrollTop = messageOutput.scrollHeight;
+                }
+            }
+        });
+
+        // Simulate real-time updates
+        setInterval(() => {
+            const systemMessages = [
+                'New message received from user2@example.com',
+                'User user3@example.com came online',
+                'Broadcast message sent to 12 users',
+                'Connection established from new session'
+            ];
+            
+            if (Math.random() > 0.7) {
+                const systemMsg = document.createElement('div');
+                systemMsg.className = 'system-message';
+                systemMsg.innerHTML = `<strong>SYSTEM:</strong> ${systemMessages[Math.floor(Math.random() * systemMessages.length)]}`;
+                messageOutput.appendChild(systemMsg);
+                messageOutput.scrollTop = messageOutput.scrollHeight;
+                
+                setTimeout(() => {
+                    systemMsg.remove();
+                }, 3000);
+            }
+        }, 8000);
+    </script>
+</body>
+</html>
